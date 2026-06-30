@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation';
 import { DashboardLayoutShell } from '@/components/layout';
 import { Card, Badge, Button } from '@/components/ui';
 import { useAppStore } from '@/lib/store';
-import { ArrowLeft, Calendar, FileText, Milk, Phone, MapPin, User, ArrowUpRight } from 'lucide-react';
+import { ArrowLeft, Calendar, FileText, Milk, Phone, MapPin, User, ArrowUpRight, Trash2, AlertCircle, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 export default function CustomerDetailPage({
   params,
@@ -21,8 +22,64 @@ export default function CustomerDetailPage({
   const customers = useAppStore((state) => state.customers);
   const milkEntries = useAppStore((state) => state.milkEntries);
   const payments = useAppStore((state) => state.payments);
+  const deleteCustomer = useAppStore((state) => state.deleteCustomer);
 
   const customer = customers.find(c => c.id === id);
+
+  const [canDelete, setCanDelete] = useState(true);
+  const [validationReasons, setValidationReasons] = useState<string[]>([]);
+  const [isCheckingDues, setIsCheckingDues] = useState(true);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+
+  // Filter entries
+  const customerEntries = milkEntries.filter(e => e.customerId === id);
+  const customerPayments = payments.filter(p => p.customerId === id);
+
+  useEffect(() => {
+    async function checkDeletionRules() {
+      if (!customer) return;
+      setIsCheckingDues(true);
+      const reasons: string[] = [];
+
+      // Rule 1: No milk entries exist
+      if (customerEntries.length > 0) {
+        reasons.push('Milk entry records exist.');
+      }
+      // Rule 2: No payment history exists
+      if (customerPayments.length > 0) {
+        reasons.push('Payment history records exist.');
+      }
+      // Rule 3: Outstanding balance is ₹0
+      if (customer.balance !== 0) {
+        reasons.push(`Outstanding balance is ₹${customer.balance.toFixed(2)} (must be ₹0.00).`);
+      }
+
+      // Rule 4: No bills exist
+      try {
+        const { createClient } = await import('@/lib/supabase/client');
+        const supabase = createClient();
+        const { count, error } = await supabase
+          .from('bills')
+          .select('*', { count: 'exact', head: true })
+          .eq('customer_id', id)
+          .is('deleted_at', null);
+
+        if (error) throw error;
+        if (count && count > 0) {
+          reasons.push('Billing history records exist.');
+        }
+      } catch (err: any) {
+        console.error('Error checking bills:', err);
+      }
+
+      setValidationReasons(reasons);
+      setCanDelete(reasons.length === 0);
+      setIsCheckingDues(false);
+    }
+
+    checkDeletionRules();
+  }, [id, customerEntries.length, customerPayments.length, customer?.balance]);
 
   if (!customer) {
     return (
@@ -34,10 +91,6 @@ export default function CustomerDetailPage({
       </DashboardLayoutShell>
     );
   }
-
-  // Filter entries
-  const customerEntries = milkEntries.filter(e => e.customerId === id);
-  const customerPayments = payments.filter(p => p.customerId === id);
 
   // Daily Average
   const dailyAverage = customerEntries.length > 0 
@@ -59,6 +112,20 @@ export default function CustomerDetailPage({
     .filter(e => new Date(e.date) >= oneMonthAgo)
     .reduce((sum, e) => sum + e.quantity, 0)
     .toFixed(1);
+
+  const handleDelete = async () => {
+    setIsDeleting(true);
+    try {
+      await deleteCustomer(id);
+      toast.success(`✓ Customer "${customer.name}" deleted successfully.`);
+      router.push('/customers');
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to delete customer.');
+    } finally {
+      setIsDeleting(false);
+      setShowConfirm(false);
+    }
+  };
 
   return (
     <DashboardLayoutShell title="Customer Analytics & Profile">
@@ -142,8 +209,46 @@ export default function CustomerDetailPage({
                 </div>
                 <div className="pt-3 border-t border-slate-100 dark:border-slate-800/80">
                   <p className="text-[10px] uppercase text-slate-500 font-bold">Outstanding Balance</p>
-                  <p className="text-xl font-extrabold text-rose-600 mt-1">₹{customer.balance}</p>
+                  <p className="text-xl font-extrabold text-rose-600 mt-1">₹{customer.balance.toFixed(2)}</p>
                 </div>
+              </div>
+            </Card>
+
+            {/* Secure Deletion Rules Enforcer UI */}
+            <Card title="Account Maintenance" subtitle="Options for terminating customer profiles">
+              <div className="space-y-3">
+                {isCheckingDues ? (
+                  <div className="flex items-center gap-2 text-xs text-slate-500">
+                    <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-600" />
+                    Checking secure deletion rules...
+                  </div>
+                ) : !canDelete ? (
+                  <div className="space-y-2">
+                    <div className="p-3 bg-rose-50 dark:bg-rose-950/20 text-rose-700 dark:text-rose-400 rounded-xl flex items-start gap-2 text-[11px]">
+                      <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                      <div>
+                        <span className="font-bold block mb-1">Delete Option Disabled</span>
+                        <ul className="list-disc pl-3.5 space-y-0.5">
+                          {validationReasons.map((r, i) => <li key={i}>{r}</li>)}
+                        </ul>
+                      </div>
+                    </div>
+                    <Button variant="danger" disabled className="w-full text-xs font-semibold py-2.5 rounded-xl cursor-not-allowed">
+                      <Trash2 className="w-3.5 h-3.5 mr-1" /> Delete Member
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <p className="text-[11px] text-slate-500">This member is clean and eligible for deletion. No active records or balance dues found.</p>
+                    <Button 
+                      variant="danger" 
+                      onClick={() => setShowConfirm(true)} 
+                      className="w-full text-xs font-bold py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white"
+                    >
+                      <Trash2 className="w-3.5 h-3.5 mr-1" /> Delete Member
+                    </Button>
+                  </div>
+                )}
               </div>
             </Card>
           </div>
@@ -197,6 +302,49 @@ export default function CustomerDetailPage({
         </div>
 
       </div>
+
+      {/* Confirmation Dialog Overlay */}
+      {showConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs">
+          <div className="w-full max-w-sm bg-white rounded-2xl border border-slate-200 p-6 shadow-2xl space-y-4">
+            <div className="flex items-center gap-3 text-rose-600">
+              <div className="w-10 h-10 bg-rose-50 rounded-xl flex items-center justify-center">
+                <Trash2 className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="font-bold text-slate-800 text-sm">Delete Customer Profile?</h3>
+                <p className="text-[11px] text-slate-500">This action cannot be undone.</p>
+              </div>
+            </div>
+            
+            <p className="text-xs text-slate-600">
+              Are you sure you want to permanently delete the profile of <span className="font-bold text-slate-800">"{customer.name}"</span>?
+            </p>
+
+            <div className="flex gap-2 justify-end pt-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => setShowConfirm(false)}
+                disabled={isDeleting}
+                className="px-4 py-2 text-xs font-semibold rounded-xl"
+              >
+                Cancel
+              </Button>
+              <Button 
+                variant="primary" 
+                size="sm" 
+                onClick={handleDelete}
+                disabled={isDeleting}
+                className="px-4 py-2 text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white rounded-xl flex items-center gap-1.5"
+              >
+                {isDeleting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                Yes, Delete
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </DashboardLayoutShell>
   );
 }

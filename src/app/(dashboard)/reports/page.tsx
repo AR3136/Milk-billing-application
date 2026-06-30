@@ -1,85 +1,238 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { DashboardLayoutShell } from '@/components/layout';
-import { Card, Badge, Button } from '@/components/ui';
-import { BarChart3, TrendingUp, Sparkles, FileText, Download } from 'lucide-react';
+import { Card, Badge, Button, Input } from '@/components/ui';
+import { BarChart3, Download, Calendar, Users, TrendingUp, ShieldAlert } from 'lucide-react';
 import { useAppStore } from '@/lib/store';
+import { toast } from 'sonner';
+import * as XLSX from 'xlsx';
 
 export default function ReportsPage() {
+  const customers = useAppStore((state) => state.customers);
   const milkEntries = useAppStore((state) => state.milkEntries);
   const expenses = useAppStore((state) => state.expenses);
 
-  const totalQuantity = milkEntries.reduce((sum, e) => sum + e.quantity, 0);
-  const totalRevenue = milkEntries.reduce((sum, e) => sum + e.amount, 0);
-  const totalExpense = expenses.reduce((sum, ex) => sum + ex.amount, 0);
-  const netProfit = totalRevenue - totalExpense;
+  const todayStr = new Date().toISOString().split('T')[0];
+  
+  // Set default cycle range (last 15 days)
+  const fifteenDaysAgo = new Date();
+  fifteenDaysAgo.setDate(fifteenDaysAgo.getDate() - 14);
+  const fifteenDaysAgoStr = fifteenDaysAgo.toISOString().split('T')[0];
+
+  const [startDate, setStartDate] = useState(fifteenDaysAgoStr);
+  const [endDate, setEndDate] = useState(todayStr);
+
+  // Generate date array in selected range
+  const dateRangeList = useMemo(() => {
+    const dates: string[] = [];
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    
+    if (isNaN(start.getTime()) || isNaN(end.getTime()) || start > end) {
+      return [];
+    }
+
+    const current = new Date(start);
+    while (current <= end) {
+      dates.push(current.toISOString().split('T')[0]);
+      current.setDate(current.getDate() + 1);
+    }
+    return dates;
+  }, [startDate, endDate]);
+
+  // Filter entries based on selected dates
+  const filteredEntries = useMemo(() => {
+    return milkEntries.filter(e => e.date >= startDate && e.date <= endDate);
+  }, [milkEntries, startDate, endDate]);
+
+  // Summary Metrics
+  const totalLiters = useMemo(() => {
+    return filteredEntries.reduce((sum, e) => sum + e.quantity, 0);
+  }, [filteredEntries]);
+
+  const totalValue = useMemo(() => {
+    return filteredEntries.reduce((sum, e) => sum + e.amount, 0);
+  }, [filteredEntries]);
+
+  const totalExpense = useMemo(() => {
+    return expenses
+      .filter(ex => ex.date >= startDate && ex.date <= endDate)
+      .reduce((sum, ex) => sum + ex.amount, 0);
+  }, [expenses, startDate, endDate]);
+
+  const netProfit = totalValue - totalExpense;
+
+  // Build the day-wise Excel sheet & trigger download
+  const handleExportExcel = () => {
+    if (dateRangeList.length === 0) {
+      toast.error('Invalid date range. Please select valid dates.');
+      return;
+    }
+
+    try {
+      const dataRows = customers.map((cust) => {
+        const row: any = {
+          'Customer Name': cust.name,
+          'Milk Type': cust.milkType.toUpperCase(),
+        };
+
+        let rowTotal = 0;
+        dateRangeList.forEach((date) => {
+          // Filter entries for this customer on this specific date
+          const dayEntries = filteredEntries.filter(
+            (e) => e.customerId === cust.id && e.date === date
+          );
+          const totalQty = dayEntries.reduce((sum, e) => sum + e.quantity, 0);
+          
+          // Format date for excel header e.g. "Jun 20"
+          const dateLabel = new Date(date).toLocaleDateString('en-IN', {
+            day: '2-digit',
+            month: 'short',
+          });
+          
+          row[dateLabel] = totalQty; // Considered 0 if no entries exist
+          rowTotal += totalQty;
+        });
+
+        row['Total (Liters)'] = rowTotal;
+        return row;
+      });
+
+      const worksheet = XLSX.utils.json_to_sheet(dataRows);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Day-wise Milk Log');
+
+      // Export file
+      XLSX.writeFile(workbook, `Ganga_Dairy_Yield_Report_${startDate}_to_${endDate}.xlsx`);
+      toast.success('✓ Excel sheet downloaded successfully!');
+    } catch (err: any) {
+      toast.error('Failed to generate Excel sheet: ' + err.message);
+    }
+  };
 
   return (
-    <DashboardLayoutShell title="Reports & Analytics">
+    <DashboardLayoutShell title="Reports & Logbook Analytics">
       <div className="space-y-6">
         
-        {/* Top Summary Banner */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Period Selector & Actions */}
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-100 dark:border-slate-800/80 flex flex-wrap items-end justify-between gap-4">
+          <div className="flex flex-wrap items-center gap-3 text-xs">
+            <div className="space-y-1">
+              <label className="font-semibold text-slate-500">From Date</label>
+              <input
+                type="date"
+                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={startDate}
+                onChange={e => setStartDate(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="font-semibold text-slate-500">To Date</label>
+              <input
+                type="date"
+                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={endDate}
+                onChange={e => setEndDate(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <Button onClick={handleExportExcel} disabled={customers.length === 0} className="gap-2 rounded-xl text-xs font-bold py-2.5">
+            <Download className="w-4 h-4" /> Download Excel Sheet
+          </Button>
+        </div>
+
+        {/* Top Summary Metrics */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card className="border-l-4 border-l-blue-500">
-            <p className="text-xs uppercase text-slate-500 dark:text-slate-400 font-semibold">Total Revenue</p>
-            <h3 className="text-xl font-bold">₹{totalRevenue.toFixed(1)}</h3>
-            <p className="text-[10px] text-slate-500 dark:text-slate-400">Total milk billing cycles</p>
-          </Card>
-          <Card className="border-l-4 border-l-rose-500">
-            <p className="text-xs uppercase text-slate-500 dark:text-slate-400 font-semibold">Total Expenses</p>
-            <h3 className="text-xl font-bold">₹{totalExpense.toFixed(1)}</h3>
-            <p className="text-[10px] text-slate-500 dark:text-slate-400">Feed, salary and veterinary logs</p>
+            <p className="text-xs uppercase text-slate-500 font-semibold">Total Yield Volume</p>
+            <h3 className="text-xl font-bold mt-1">{totalLiters.toFixed(1)} L</h3>
+            <p className="text-[10px] text-slate-400 mt-0.5">Total liters collected</p>
           </Card>
           <Card className="border-l-4 border-l-emerald-500">
-            <p className="text-xs uppercase text-slate-500 dark:text-slate-400 font-semibold">Net Balance</p>
-            <h3 className="text-xl font-bold text-emerald-600 dark:text-emerald-400">₹{netProfit.toFixed(1)}</h3>
-            <p className="text-[10px] text-slate-500 dark:text-slate-400">Net operating revenue balance</p>
+            <p className="text-xs uppercase text-slate-500 font-semibold">Total Dues Value</p>
+            <h3 className="text-xl font-bold text-emerald-600 dark:text-emerald-400 mt-1">₹{totalValue.toFixed(2)}</h3>
+            <p className="text-[10px] text-slate-400 mt-0.5">Current cycle value</p>
+          </Card>
+          <Card className="border-l-4 border-l-rose-500">
+            <p className="text-xs uppercase text-slate-500 font-semibold">Log Period Expenses</p>
+            <h3 className="text-xl font-bold text-rose-600 mt-1">₹{totalExpense.toFixed(2)}</h3>
+            <p className="text-[10px] text-slate-400 mt-0.5">Feed, salaries and repairs</p>
+          </Card>
+          <Card className="border-l-4 border-l-violet-500">
+            <p className="text-xs uppercase text-slate-500 font-semibold">Net Operating Balance</p>
+            <h3 className={`text-xl font-bold mt-1 ${netProfit >= 0 ? 'text-violet-600' : 'text-rose-600'}`}>
+              ₹{netProfit.toFixed(2)}
+            </h3>
+            <p className="text-[10px] text-slate-400 mt-0.5">Revenue minus expenses</p>
           </Card>
         </div>
 
-        {/* Charts & actions section */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2">
-            <Card title="Milk Yield & Yield Analysis" subtitle="Overview yield metrics and total quantity log">
-              <div className="p-6 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl flex flex-col justify-center items-center h-64 text-center">
-                <BarChart3 className="w-12 h-12 text-slate-300 dark:text-slate-700 mb-3" />
-                <p className="text-sm font-semibold text-slate-600 dark:text-slate-500 dark:text-slate-400">Chart Visualization Mock</p>
-                <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mt-1">
-                  Recharts implementation placeholder. Total volume tracked: {totalQuantity} L.
-                </p>
-              </div>
-            </Card>
-          </div>
-
-          <div className="space-y-4">
-            <Card title="Quick Export Tools" subtitle="Download reports as Excel or PDF documents">
-              <div className="space-y-3">
-                <Button variant="outline" className="w-full justify-start gap-3 rounded-xl py-3">
-                  <FileText className="w-4.5 h-4.5 text-blue-600" />
-                  <div className="text-left">
-                    <p className="text-xs font-semibold">Monthly Yield Report</p>
-                    <p className="text-[10px] text-slate-500 dark:text-slate-400">Download Excel spread</p>
-                  </div>
-                </Button>
-                <Button variant="outline" className="w-full justify-start gap-3 rounded-xl py-3">
-                  <FileText className="w-4.5 h-4.5 text-emerald-600" />
-                  <div className="text-left">
-                    <p className="text-xs font-semibold">Client Billing ledger</p>
-                    <p className="text-[10px] text-slate-500 dark:text-slate-400">Download PDF document</p>
-                  </div>
-                </Button>
-                <Button variant="outline" className="w-full justify-start gap-3 rounded-xl py-3">
-                  <FileText className="w-4.5 h-4.5 text-rose-600" />
-                  <div className="text-left">
-                    <p className="text-xs font-semibold">Expenses Statements</p>
-                    <p className="text-[10px] text-slate-500 dark:text-slate-400">Download audit files</p>
-                  </div>
-                </Button>
-              </div>
-            </Card>
-          </div>
-        </div>
+        {/* Day-Wise Excel Like Sheet Grid */}
+        <Card title="Day-Wise Collections Logbook Grid" subtitle="Scroll horizontally to see yields per day (missing collections default to 0)">
+          {customers.length === 0 ? (
+            <div className="py-12 text-center text-slate-500 text-xs">
+              No customer logs found in the database.
+            </div>
+          ) : dateRangeList.length === 0 ? (
+            <div className="py-12 text-center text-rose-500 text-xs flex flex-col items-center gap-2">
+              <ShieldAlert className="w-8 h-8" />
+              <span>Invalid date range selected. Make sure the start date is before the end date.</span>
+            </div>
+          ) : (
+            <div className="overflow-x-auto border border-slate-100 dark:border-slate-800 rounded-xl max-h-[500px]">
+              <table className="w-full text-left border-collapse text-[11px] table-fixed min-w-[800px]">
+                <thead>
+                  <tr className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 uppercase font-semibold sticky top-0 z-20">
+                    <th className="py-3 px-3 w-40 sticky left-0 bg-slate-50 dark:bg-slate-900 border-r border-slate-250 dark:border-slate-800 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">Customer Name</th>
+                    {dateRangeList.map(date => {
+                      const label = new Date(date).toLocaleDateString('en-IN', {
+                        day: '2-digit',
+                        month: 'short',
+                      });
+                      return (
+                        <th key={date} className="py-3 px-2 text-center border-r border-slate-200 dark:border-slate-800 w-20">{label}</th>
+                      );
+                    })}
+                    <th className="py-3 px-3 text-right w-24">Total (L)</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-150 dark:divide-slate-800">
+                  {customers.map((cust) => {
+                    let totalRowQty = 0;
+                    return (
+                      <tr key={cust.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/10 transition-colors">
+                        <td className="py-2.5 px-3 font-semibold text-slate-800 dark:text-slate-200 sticky left-0 bg-white dark:bg-slate-950 border-r border-slate-200 dark:border-slate-800 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] truncate">
+                          {cust.name}
+                        </td>
+                        {dateRangeList.map((date) => {
+                          const dayEntries = filteredEntries.filter(
+                            (e) => e.customerId === cust.id && e.date === date
+                          );
+                          const totalQty = dayEntries.reduce((sum, e) => sum + e.quantity, 0);
+                          totalRowQty += totalQty;
+                          return (
+                            <td key={date} className="py-2.5 px-2 text-center border-r border-slate-200 dark:border-slate-800">
+                              {totalQty > 0 ? (
+                                <span className="font-bold text-slate-900 dark:text-slate-100">{totalQty.toFixed(1)} L</span>
+                              ) : (
+                                <span className="text-slate-350 dark:text-slate-600 font-medium">0 L</span>
+                              )}
+                            </td>
+                          );
+                        })}
+                        <td className="py-2.5 px-3 text-right font-extrabold text-blue-600 dark:text-blue-400">
+                          {totalRowQty.toFixed(1)} L
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </Card>
 
       </div>
     </DashboardLayoutShell>

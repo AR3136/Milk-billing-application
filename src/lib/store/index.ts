@@ -68,6 +68,8 @@ interface AppStore {
   addMilkEntry: (e: Omit<MilkEntry, 'id' | 'amount'>) => Promise<void>;
   addPayment: (p: Omit<Payment, 'id'>) => Promise<void>;
   addExpense: (ex: Omit<Expense, 'id'>) => Promise<void>;
+  deleteCustomer: (id: string) => Promise<void>;
+  deleteMilkEntry: (id: string) => Promise<void>;
 }
 
 export const useAppStore = create<AppStore>((set, get) => ({
@@ -117,6 +119,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       const { data: dbCustomers, error: custError } = await supabase
         .from('customers')
         .select('*')
+        .eq('user_id', user.id)
         .order('created_at', { ascending: true });
 
       if (custError) {
@@ -140,6 +143,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       const { data: dbEntries, error: entryError } = await supabase
         .from('milk_entries')
         .select('*')
+        .eq('user_id', user.id)
         .order('date', { ascending: false })
         .limit(200);
 
@@ -163,6 +167,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       const { data: dbPayments, error: payError } = await supabase
         .from('payments')
         .select('*')
+        .eq('user_id', user.id)
         .order('payment_date', { ascending: false })
         .limit(200);
 
@@ -183,6 +188,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       const { data: dbExpenses, error: expError } = await supabase
         .from('expenses')
         .select('*')
+        .eq('user_id', user.id)
         .order('date', { ascending: false })
         .limit(200);
 
@@ -371,5 +377,148 @@ export const useAppStore = create<AppStore>((set, get) => ({
       date: inserted.date,
     };
     set((state) => ({ expenses: [newExpense, ...state.expenses] }));
+  },
+
+  deleteCustomer: async (id) => {
+    const supabase = createClient();
+
+    // 1. Enforce validation rule: No milk entries exist
+    const { count: entryCount, error: entryErr } = await supabase
+      .from('milk_entries')
+      .select('*', { count: 'exact', head: true })
+      .eq('customer_id', id)
+      .is('deleted_at', null);
+
+    if (entryErr) throw new Error(entryErr.message);
+    if (entryCount && entryCount > 0) {
+      throw new Error('Cannot delete customer: Milk entries exist.');
+    }
+
+    // 2. Enforce validation rule: No payment history exists
+    const { count: payCount, error: payErr } = await supabase
+      .from('payments')
+      .select('*', { count: 'exact', head: true })
+      .eq('customer_id', id)
+      .is('deleted_at', null);
+
+    if (payErr) throw new Error(payErr.message);
+    if (payCount && payCount > 0) {
+      throw new Error('Cannot delete customer: Payment history exists.');
+    }
+
+    // 3. Enforce validation rule: No bills exist
+    const { count: billCount, error: billErr } = await supabase
+      .from('bills')
+      .select('*', { count: 'exact', head: true })
+      .eq('customer_id', id)
+      .is('deleted_at', null);
+
+    if (billErr) throw new Error(billErr.message);
+    if (billCount && billCount > 0) {
+      throw new Error('Cannot delete customer: Bills exist.');
+    }
+
+    // Double check balance in local state to satisfy rule: Outstanding balance & Advance balance is 0
+    const currentCustomer = get().customers.find(c => c.id === id);
+    if (currentCustomer && currentCustomer.balance !== 0) {
+      throw new Error(`Cannot delete customer: Customer has a balance of ₹${currentCustomer.balance.toFixed(2)}.`);
+    }
+
+    // 4. Try soft-deleting if column exists, fallback to hard-delete
+    const { error: softDelErr } = await supabase
+      .from('customers')
+      .update({ deleted_at: new Date().toISOString(), is_active: false })
+      .eq('id', id);
+
+    if (softDelErr) {
+      const { error: hardDelErr } = await supabase
+        .from('customers')
+        .delete()
+        .eq('id', id);
+      if (hardDelErr) throw new Error(hardDelErr.message);
+    }
+
+    // Update local state
+    set((state) => ({
+      customers: state.customers.filter(c => c.id !== id)
+    }));
+  },
+
+  deleteMilkEntry: async (id) => {
+    const supabase = createClient();
+
+    // 1. Verify if milk entry belongs to a finalized bill
+    const { data: lineItems, error: lineErr } = await supabase
+      .from('bill_line_items')
+      .select('bill_id')
+      .eq('milk_entry_id', id);
+
+    if (lineErr) throw new Error(lineErr.message);
+
+    if (lineItems && lineItems.length > 0) {
+      const billIds = lineItems.map(item => item.bill_id);
+      
+      const { data: bills, error: billsErr } = await supabase
+        .from('bills')
+        .select('status, bill_number')
+        .in('id', billIds)
+        .is('deleted_at', null);
+
+      if (billsErr) throw new Error(billsErr.message);
+
+      const finalizedStatuses = ['sent', 'paid', 'partially_paid', 'overdue'];
+      const finalizedBill = bills?.find(b => finalizedStatuses.includes(b.status));
+
+      if (finalizedBill) {
+        throw new Error(`Cannot delete: This entry belongs to a finalized bill (${finalizedBill.bill_number}). Finalized bills must be reopened or cancelled before modifying associated entries.`);
+      }
+
+      // Deleting line item association for draft/generated bills
+      const { error: deleteLinesErr } = await supabase
+        .from('bill_line_items')
+        .delete()
+        .eq('milk_entry_id', id);
+
+      if (deleteLinesErr) throw new Error(deleteLinesErr.message);
+
+      // Recalculate affected bills
+      for (const billId of billIds) {
+        const { data: remainingItems } = await supabase
+          .from('bill_line_items')
+          .select('quantity, amount')
+          .eq('bill_id', billId);
+
+        const newQty = remainingItems?.reduce((sum, item) => sum + Number(item.quantity), 0) || 0;
+        const newAmt = remainingItems?.reduce((sum, item) => sum + Number(item.amount), 0) || 0;
+
+        const { data: billData } = await supabase
+          .from('bills')
+          .select('balance_forward')
+          .eq('id', billId)
+          .single();
+
+        const balForward = Number(billData?.balance_forward || 0);
+
+        await supabase
+          .from('bills')
+          .update({
+            total_quantity: newQty,
+            total_amount: newAmt,
+            net_payable: newAmt + balForward
+          })
+          .eq('id', billId);
+      }
+    }
+
+    // 2. Perform the deletion of the milk entry
+    const { error: entryDelErr } = await supabase
+      .from('milk_entries')
+      .delete()
+      .eq('id', id);
+
+    if (entryDelErr) throw new Error(entryDelErr.message);
+
+    // 3. Automatically reload state & recalculate everything dynamically
+    await get().fetchData();
   },
 }));

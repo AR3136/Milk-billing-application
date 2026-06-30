@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { DashboardLayoutShell } from '@/components/layout';
 import { Card, Badge, Button, Input } from '@/components/ui';
-import { Milk, ClipboardCheck, History, AlertCircle } from 'lucide-react';
+import { Milk, ClipboardCheck, History, AlertCircle, Trash2, Loader2 } from 'lucide-react';
 import { useAppStore, MilkType } from '@/lib/store';
 import { toast } from 'sonner';
 
@@ -19,6 +19,7 @@ export default function MilkEntryPage() {
   const customers = useAppStore((state) => state.customers);
   const milkEntries = useAppStore((state) => state.milkEntries);
   const addMilkEntry = useAppStore((state) => state.addMilkEntry);
+  const deleteMilkEntry = useAppStore((state) => state.deleteMilkEntry);
 
   const today = new Date().toISOString().split('T')[0];
   const [customerId, setCustomerId] = useState('');
@@ -27,6 +28,10 @@ export default function MilkEntryPage() {
   const [date, setDate] = useState(today);
   const [entryMilkType, setEntryMilkType] = useState<'cow' | 'buffalo'>('cow');
   const [isSaving, setIsSaving] = useState(false);
+
+  // Deletion States
+  const [entryToDelete, setEntryToDelete] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Set first customer once loaded
   useEffect(() => {
@@ -91,6 +96,20 @@ export default function MilkEntryPage() {
       toast.error(err.message || 'Failed to save entry. Please try again.');
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleDeleteEntry = async () => {
+    if (!entryToDelete) return;
+    setIsDeleting(true);
+    try {
+      await deleteMilkEntry(entryToDelete);
+      toast.success('✓ Milk entry deleted and balances recalculated successfully.');
+      setEntryToDelete(null);
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to delete entry.');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -243,6 +262,7 @@ export default function MilkEntryPage() {
                       <th className="py-3 px-3">Qty</th>
                       <th className="py-3 px-3">Rate</th>
                       <th className="py-3 px-3 text-right">Amount</th>
+                      <th className="py-3 px-3 text-center">Action</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-50 dark:divide-slate-800/50">
@@ -263,6 +283,15 @@ export default function MilkEntryPage() {
                         <td className="py-3 px-3 font-medium">{entry.quantity} L</td>
                         <td className="py-3 px-3 text-slate-500 dark:text-slate-400">₹{entry.rate}/L</td>
                         <td className="py-3 px-3 text-right font-bold text-slate-800 dark:text-slate-100">₹{entry.amount.toFixed(2)}</td>
+                        <td className="py-3 px-3 text-center">
+                          <button
+                            onClick={() => setEntryToDelete(entry.id)}
+                            className="p-1.5 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-lg transition-colors"
+                            title="Delete entry"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -273,6 +302,49 @@ export default function MilkEntryPage() {
         </div>
 
       </div>
+
+      {/* Confirmation Dialog Overlay for Milk Entry Deletion */}
+      {entryToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs">
+          <div className="w-full max-w-sm bg-white rounded-2xl border border-slate-200 p-6 shadow-2xl space-y-4">
+            <div className="flex items-center gap-3 text-rose-600">
+              <div className="w-10 h-10 bg-rose-50 rounded-xl flex items-center justify-center">
+                <Trash2 className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="font-bold text-slate-800 text-sm">Delete Milk Entry?</h3>
+                <p className="text-[11px] text-slate-500">This action cannot be undone.</p>
+              </div>
+            </div>
+            
+            <p className="text-xs text-slate-600">
+              Are you sure you want to permanently delete this milk collection entry? Customer balance dues and analytics will be recalculated automatically.
+            </p>
+
+            <div className="flex gap-2 justify-end pt-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => setEntryToDelete(null)}
+                disabled={isDeleting}
+                className="px-4 py-2 text-xs font-semibold rounded-xl"
+              >
+                Cancel
+              </Button>
+              <Button 
+                variant="primary" 
+                size="sm" 
+                onClick={handleDeleteEntry}
+                disabled={isDeleting}
+                className="px-4 py-2 text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white rounded-xl flex items-center gap-1.5"
+              >
+                {isDeleting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                Yes, Delete
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </DashboardLayoutShell>
   );
 }
