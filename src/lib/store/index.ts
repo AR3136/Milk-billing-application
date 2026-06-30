@@ -382,31 +382,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   deleteCustomer: async (id) => {
     const supabase = createClient();
 
-    // 1. Enforce validation rule: No milk entries exist
-    const { count: entryCount, error: entryErr } = await supabase
-      .from('milk_entries')
-      .select('*', { count: 'exact', head: true })
-      .eq('customer_id', id)
-      .is('deleted_at', null);
-
-    if (entryErr) throw new Error(entryErr.message);
-    if (entryCount && entryCount > 0) {
-      throw new Error('Cannot delete customer: Milk entries exist.');
-    }
-
-    // 2. Enforce validation rule: No payment history exists
-    const { count: payCount, error: payErr } = await supabase
-      .from('payments')
-      .select('*', { count: 'exact', head: true })
-      .eq('customer_id', id)
-      .is('deleted_at', null);
-
-    if (payErr) throw new Error(payErr.message);
-    if (payCount && payCount > 0) {
-      throw new Error('Cannot delete customer: Payment history exists.');
-    }
-
-    // 3. Enforce validation rule: No bills exist
+    // 1. Enforce validation rule: No bills exist
     const { count: billCount, error: billErr } = await supabase
       .from('bills')
       .select('*', { count: 'exact', head: true })

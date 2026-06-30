@@ -42,20 +42,12 @@ export default function CustomerDetailPage({
       setIsCheckingDues(true);
       const reasons: string[] = [];
 
-      // Rule 1: No milk entries exist
-      if (customerEntries.length > 0) {
-        reasons.push('Milk entry records exist.');
-      }
-      // Rule 2: No payment history exists
-      if (customerPayments.length > 0) {
-        reasons.push('Payment history records exist.');
-      }
-      // Rule 3: Outstanding balance is ₹0
+      // Rule 1: Outstanding balance is ₹0
       if (customer.balance !== 0) {
         reasons.push(`Outstanding balance is ₹${customer.balance.toFixed(2)} (must be ₹0.00).`);
       }
 
-      // Rule 4: No bills exist
+      // Rule 2: No bills exist
       try {
         const { createClient } = await import('@/lib/supabase/client');
         const supabase = createClient();
