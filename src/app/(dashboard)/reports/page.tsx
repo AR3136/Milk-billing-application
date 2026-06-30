@@ -63,7 +63,7 @@ export default function ReportsPage() {
 
   const netProfit = totalValue - totalExpense;
 
-  // Build the day-wise Excel sheet & trigger download
+  // Build the vertical day-wise Excel sheet & trigger download
   const handleExportExcel = () => {
     if (dateRangeList.length === 0) {
       toast.error('Invalid date range. Please select valid dates.');
@@ -71,40 +71,37 @@ export default function ReportsPage() {
     }
 
     try {
-      const dataRows = customers.map((cust) => {
+      const dataRows = dateRangeList.map((date) => {
+        const dateLabel = new Date(date).toLocaleDateString('en-IN', {
+          day: '2-digit',
+          month: 'short',
+          year: 'numeric',
+        });
+
         const row: any = {
-          'Customer Name': cust.name,
-          'Milk Type': cust.milkType.toUpperCase(),
+          'Date': dateLabel,
         };
 
-        let rowTotal = 0;
-        dateRangeList.forEach((date) => {
-          // Filter entries for this customer on this specific date
+        let dayTotal = 0;
+        customers.forEach((cust) => {
           const dayEntries = filteredEntries.filter(
             (e) => e.customerId === cust.id && e.date === date
           );
           const totalQty = dayEntries.reduce((sum, e) => sum + e.quantity, 0);
-          
-          // Format date for excel header e.g. "Jun 20"
-          const dateLabel = new Date(date).toLocaleDateString('en-IN', {
-            day: '2-digit',
-            month: 'short',
-          });
-          
-          row[dateLabel] = totalQty; // Considered 0 if no entries exist
-          rowTotal += totalQty;
+          row[cust.name] = totalQty; // Considered 0 if no entries exist
+          dayTotal += totalQty;
         });
 
-        row['Total (Liters)'] = rowTotal;
+        row['Total Yield (Liters)'] = dayTotal;
         return row;
       });
 
       const worksheet = XLSX.utils.json_to_sheet(dataRows);
       const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, 'Day-wise Milk Log');
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Vertical Yield Log');
 
       // Export file
-      XLSX.writeFile(workbook, `Ganga_Dairy_Yield_Report_${startDate}_to_${endDate}.xlsx`);
+      XLSX.writeFile(workbook, `Ganga_Dairy_Vertical_Report_${startDate}_to_${endDate}.xlsx`);
       toast.success('✓ Excel sheet downloaded successfully!');
     } catch (err: any) {
       toast.error('Failed to generate Excel sheet: ' + err.message);
@@ -169,8 +166,8 @@ export default function ReportsPage() {
           </Card>
         </div>
 
-        {/* Day-Wise Excel Like Sheet Grid */}
-        <Card title="Day-Wise Collections Logbook Grid" subtitle="Scroll horizontally to see yields per day (missing collections default to 0)">
+        {/* Vertical Day-Wise Excel Like Sheet Grid */}
+        <Card title="Vertical Collections Logbook Grid" subtitle="Scroll horizontally if you have many customers (missing collections default to 0 L)">
           {customers.length === 0 ? (
             <div className="py-12 text-center text-slate-500 text-xs">
               No customer logs found in the database.
@@ -182,38 +179,38 @@ export default function ReportsPage() {
             </div>
           ) : (
             <div className="overflow-x-auto border border-slate-100 dark:border-slate-800 rounded-xl max-h-[500px]">
-              <table className="w-full text-left border-collapse text-[11px] table-fixed min-w-[800px]">
+              <table className="w-full text-left border-collapse text-[11px] min-w-[800px]">
                 <thead>
                   <tr className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 uppercase font-semibold sticky top-0 z-20">
-                    <th className="py-3 px-3 w-40 sticky left-0 bg-slate-50 dark:bg-slate-900 border-r border-slate-250 dark:border-slate-800 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">Customer Name</th>
-                    {dateRangeList.map(date => {
-                      const label = new Date(date).toLocaleDateString('en-IN', {
-                        day: '2-digit',
-                        month: 'short',
-                      });
-                      return (
-                        <th key={date} className="py-3 px-2 text-center border-r border-slate-200 dark:border-slate-800 w-20">{label}</th>
-                      );
-                    })}
-                    <th className="py-3 px-3 text-right w-24">Total (L)</th>
+                    <th className="py-3 px-3 w-32 sticky left-0 bg-slate-50 dark:bg-slate-900 border-r border-slate-250 dark:border-slate-800 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">Date</th>
+                    {customers.map(cust => (
+                      <th key={cust.id} className="py-3 px-2 text-center border-r border-slate-200 dark:border-slate-800 w-36 truncate">{cust.name}</th>
+                    ))}
+                    <th className="py-3 px-3 text-right w-32">Total Yield</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-150 dark:divide-slate-800">
-                  {customers.map((cust) => {
-                    let totalRowQty = 0;
+                  {dateRangeList.map((date) => {
+                    let dayTotalQty = 0;
+                    const label = new Date(date).toLocaleDateString('en-IN', {
+                      day: '2-digit',
+                      month: 'short',
+                      year: 'numeric',
+                    });
+                    
                     return (
-                      <tr key={cust.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/10 transition-colors">
-                        <td className="py-2.5 px-3 font-semibold text-slate-800 dark:text-slate-200 sticky left-0 bg-white dark:bg-slate-950 border-r border-slate-200 dark:border-slate-800 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] truncate">
-                          {cust.name}
+                      <tr key={date} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/10 transition-colors">
+                        <td className="py-2.5 px-3 font-semibold text-slate-800 dark:text-slate-200 sticky left-0 bg-white dark:bg-slate-950 border-r border-slate-200 dark:border-slate-800 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">
+                          {label}
                         </td>
-                        {dateRangeList.map((date) => {
+                        {customers.map((cust) => {
                           const dayEntries = filteredEntries.filter(
                             (e) => e.customerId === cust.id && e.date === date
                           );
                           const totalQty = dayEntries.reduce((sum, e) => sum + e.quantity, 0);
-                          totalRowQty += totalQty;
+                          dayTotalQty += totalQty;
                           return (
-                            <td key={date} className="py-2.5 px-2 text-center border-r border-slate-200 dark:border-slate-800">
+                            <td key={cust.id} className="py-2.5 px-2 text-center border-r border-slate-200 dark:border-slate-800">
                               {totalQty > 0 ? (
                                 <span className="font-bold text-slate-900 dark:text-slate-100">{totalQty.toFixed(1)} L</span>
                               ) : (
@@ -223,7 +220,7 @@ export default function ReportsPage() {
                           );
                         })}
                         <td className="py-2.5 px-3 text-right font-extrabold text-blue-600 dark:text-blue-400">
-                          {totalRowQty.toFixed(1)} L
+                          {dayTotalQty.toFixed(1)} L
                         </td>
                       </tr>
                     );
