@@ -179,28 +179,28 @@ export default function ReportsPage() {
             </div>
           ) : (
             <div className="overflow-x-auto border border-slate-100 dark:border-slate-800 rounded-xl max-h-[500px]">
-              <table className="w-full text-left border-collapse text-[11px] min-w-[800px]">
+              <table className="w-full text-left border-collapse text-[10px] min-w-[500px]">
                 <thead>
                   <tr className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 uppercase font-semibold sticky top-0 z-20">
-                    <th className="py-3 px-3 w-32 sticky left-0 bg-slate-50 dark:bg-slate-900 border-r border-slate-250 dark:border-slate-800 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">Date</th>
+                    <th className="py-2.5 px-2 w-20 sticky left-0 bg-slate-50 dark:bg-slate-900 border-r border-slate-250 dark:border-slate-800 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">Date</th>
                     {customers.map(cust => (
-                      <th key={cust.id} className="py-3 px-2 text-center border-r border-slate-200 dark:border-slate-800 w-36 truncate">{cust.name}</th>
+                      <th key={cust.id} className="py-2.5 px-2 text-center border-r border-slate-200 dark:border-slate-800 w-24 truncate">{cust.name}</th>
                     ))}
-                    <th className="py-3 px-3 text-right w-32">Total Yield</th>
+                    <th className="py-2.5 px-2 text-right w-24">Total</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-150 dark:divide-slate-800">
                   {dateRangeList.map((date) => {
                     let dayTotalQty = 0;
+                    // Keep layout compact on screen: just display '16 Jun'
                     const label = new Date(date).toLocaleDateString('en-IN', {
                       day: '2-digit',
                       month: 'short',
-                      year: 'numeric',
                     });
                     
                     return (
                       <tr key={date} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/10 transition-colors">
-                        <td className="py-2.5 px-3 font-semibold text-slate-800 dark:text-slate-200 sticky left-0 bg-white dark:bg-slate-950 border-r border-slate-200 dark:border-slate-800 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">
+                        <td className="py-2 px-2 font-semibold text-slate-800 dark:text-slate-200 sticky left-0 bg-white dark:bg-slate-950 border-r border-slate-200 dark:border-slate-800 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">
                           {label}
                         </td>
                         {customers.map((cust) => {
@@ -210,16 +210,16 @@ export default function ReportsPage() {
                           const totalQty = dayEntries.reduce((sum, e) => sum + e.quantity, 0);
                           dayTotalQty += totalQty;
                           return (
-                            <td key={cust.id} className="py-2.5 px-2 text-center border-r border-slate-200 dark:border-slate-800">
+                            <td key={cust.id} className="py-2 px-2 text-center border-r border-slate-200 dark:border-slate-800">
                               {totalQty > 0 ? (
                                 <span className="font-bold text-slate-900 dark:text-slate-100">{totalQty.toFixed(1)} L</span>
                               ) : (
-                                <span className="text-slate-350 dark:text-slate-600 font-medium">0 L</span>
+                                <span className="text-slate-350 dark:text-slate-650 font-medium">0 L</span>
                               )}
                             </td>
                           );
                         })}
-                        <td className="py-2.5 px-3 text-right font-extrabold text-blue-600 dark:text-blue-400">
+                        <td className="py-2 px-2 text-right font-extrabold text-blue-600 dark:text-blue-400">
                           {dayTotalQty.toFixed(1)} L
                         </td>
                       </tr>
