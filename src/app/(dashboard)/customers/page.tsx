@@ -102,7 +102,7 @@ export default function CustomersPage() {
                 {filtered.map(cust => (
                   <div 
                     key={cust.id} 
-                    onClick={() => router.push(`/customers/${cust.id}`)}
+                    onClick={() => router.push(`/milk-entry?customerId=${cust.id}`)}
                     className="py-3.5 flex justify-between items-center hover:bg-slate-50 dark:hover:bg-slate-900/30 px-3 rounded-xl transition-colors cursor-pointer"
                   >
                     <div className="flex items-center gap-3">
@@ -117,17 +117,30 @@ export default function CustomersPage() {
                       </div>
                     </div>
                     
-                    <div className="text-right">
-                      <Badge variant={MILK_TYPE_COLORS[cust.milkType]} className="text-[10px]">
-                        {MILK_TYPE_LABELS[cust.milkType]}
-                      </Badge>
-                      {cust.milkType === 'both' ? (
-                        <p className="text-[10px] text-slate-500 mt-0.5">
-                          Cow ₹{cust.rateCow} · Buffalo ₹{cust.rateBuffalo}
-                        </p>
-                      ) : (
-                        <p className="text-xs font-bold text-slate-800 dark:text-slate-200 mt-0.5">₹{cust.rate}/L</p>
-                      )}
+                    <div className="flex items-center gap-4">
+                      <div className="text-right hidden sm:block">
+                        <Badge variant={MILK_TYPE_COLORS[cust.milkType]} className="text-[10px]">
+                          {MILK_TYPE_LABELS[cust.milkType]}
+                        </Badge>
+                        {cust.milkType === 'both' ? (
+                          <p className="text-[10px] text-slate-500 mt-0.5">
+                            Cow ₹{cust.rateCow} · Buffalo ₹{cust.rateBuffalo}
+                          </p>
+                        ) : (
+                          <p className="text-xs font-bold text-slate-800 dark:text-slate-200 mt-0.5">₹{cust.rate}/L</p>
+                        )}
+                      </div>
+                      <Button 
+                        variant="primary" 
+                        size="sm" 
+                        className="px-3.5 py-1.5 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold tracking-wide"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          router.push(`/customers/${cust.id}`);
+                        }}
+                      >
+                        Report
+                      </Button>
                     </div>
                   </div>
                 ))}
