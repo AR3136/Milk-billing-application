@@ -382,25 +382,29 @@ export const useAppStore = create<AppStore>((set, get) => ({
   deleteCustomer: async (id) => {
     const supabase = createClient();
 
-    // 1. Enforce validation rule: No bills exist
-    const { count: billCount, error: billErr } = await supabase
-      .from('bills')
-      .select('*', { count: 'exact', head: true })
-      .eq('customer_id', id)
-      .is('deleted_at', null);
-
-    if (billErr) throw new Error(billErr.message);
-    if (billCount && billCount > 0) {
-      throw new Error('Cannot delete customer: Bills exist.');
-    }
-
-    // Double check balance in local state to satisfy rule: Outstanding balance & Advance balance is 0
+    // Enforce sole validation rule: Outstanding balance must be exactly 0
     const currentCustomer = get().customers.find(c => c.id === id);
-    if (currentCustomer && currentCustomer.balance !== 0) {
-      throw new Error(`Cannot delete customer: Customer has a balance of ₹${currentCustomer.balance.toFixed(2)}.`);
+    if (currentCustomer && Math.abs(currentCustomer.balance) > 0.01) {
+      throw new Error(`Cannot delete customer: Outstanding balance must be ₹0.00. Current: ₹${currentCustomer.balance.toFixed(2)}.`);
     }
 
-    // 4. Try soft-deleting if column exists, fallback to hard-delete
+    // 1. Fetch bills to clear line items first due to database references constraints
+    const { data: customerBills } = await supabase
+      .from('bills')
+      .select('id')
+      .eq('customer_id', id);
+
+    if (customerBills && customerBills.length > 0) {
+      const billIds = customerBills.map(b => b.id);
+      await supabase.from('bill_line_items').delete().in('bill_id', billIds);
+      await supabase.from('bills').delete().in('id', billIds);
+    }
+
+    // 2. Cascade delete entries and payments associated with this customer
+    await supabase.from('milk_entries').delete().eq('customer_id', id);
+    await supabase.from('payments').delete().eq('customer_id', id);
+
+    // 3. Perform customer deletion
     const { error: softDelErr } = await supabase
       .from('customers')
       .update({ deleted_at: new Date().toISOString(), is_active: false })

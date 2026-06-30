@@ -43,26 +43,8 @@ export default function CustomerDetailPage({
       const reasons: string[] = [];
 
       // Rule 1: Outstanding balance is ₹0
-      if (customer.balance !== 0) {
+      if (Math.abs(customer.balance) > 0.01) {
         reasons.push(`Outstanding balance is ₹${customer.balance.toFixed(2)} (must be ₹0.00).`);
-      }
-
-      // Rule 2: No bills exist
-      try {
-        const { createClient } = await import('@/lib/supabase/client');
-        const supabase = createClient();
-        const { count, error } = await supabase
-          .from('bills')
-          .select('*', { count: 'exact', head: true })
-          .eq('customer_id', id)
-          .is('deleted_at', null);
-
-        if (error) throw error;
-        if (count && count > 0) {
-          reasons.push('Billing history records exist.');
-        }
-      } catch (err: any) {
-        console.error('Error checking bills:', err);
       }
 
       setValidationReasons(reasons);
@@ -71,7 +53,7 @@ export default function CustomerDetailPage({
     }
 
     checkDeletionRules();
-  }, [id, customerEntries.length, customerPayments.length, customer?.balance]);
+  }, [id, customer?.balance]);
 
   if (!customer) {
     return (

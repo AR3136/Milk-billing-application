@@ -1,11 +1,11 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { DashboardLayoutShell } from '@/components/layout';
 import { Card, Button, Input, Badge } from '@/components/ui';
 import { Users, UserPlus, Search, Phone } from 'lucide-react';
 import { useAppStore, MilkType } from '@/lib/store';
-import Link from 'next/link';
 import { toast } from 'sonner';
 
 const MILK_TYPE_LABELS: Record<MilkType, string> = {
@@ -23,6 +23,7 @@ const MILK_TYPE_COLORS: Record<MilkType, 'primary' | 'warning' | 'neutral' | 'se
 };
 
 export default function CustomersPage() {
+  const router = useRouter();
   const customers = useAppStore((state) => state.customers);
   const addCustomer = useAppStore((state) => state.addCustomer);
 
@@ -88,7 +89,7 @@ export default function CustomersPage() {
             />
           </div>
 
-          <Card title="All Customers" subtitle={`${customers.length} registered`}>
+          <Card title="All Customers" subtitle={`${customers.length} registered (click anywhere on a member row to view details)`}>
             {filtered.length === 0 ? (
               <div className="py-12 text-center">
                 <Users className="w-8 h-8 text-slate-300 dark:text-slate-600 mx-auto mb-2" />
@@ -99,7 +100,11 @@ export default function CustomersPage() {
             ) : (
               <div className="divide-y divide-slate-100 dark:divide-slate-800/80">
                 {filtered.map(cust => (
-                  <div key={cust.id} className="py-3.5 flex justify-between items-center hover:bg-slate-50/50 dark:hover:bg-slate-900/10 px-2 rounded-xl transition-colors">
+                  <div 
+                    key={cust.id} 
+                    onClick={() => router.push(`/customers/${cust.id}`)}
+                    className="py-3.5 flex justify-between items-center hover:bg-slate-50 dark:hover:bg-slate-900/30 px-3 rounded-xl transition-colors cursor-pointer"
+                  >
                     <div className="flex items-center gap-3">
                       <div className="w-9 h-9 bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 rounded-xl flex items-center justify-center font-bold text-sm shrink-0">
                         {cust.name[0].toUpperCase()}
@@ -111,27 +116,18 @@ export default function CustomersPage() {
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <div className="text-right hidden sm:block">
-                        <Badge variant={MILK_TYPE_COLORS[cust.milkType]} className="text-[10px]">
-                          {MILK_TYPE_LABELS[cust.milkType]}
-                        </Badge>
-                        {cust.milkType === 'both' ? (
-                          <p className="text-[10px] text-slate-500 mt-0.5">
-                            Cow ₹{cust.rateCow} · Buffalo ₹{cust.rateBuffalo}
-                          </p>
-                        ) : (
-                          <p className="text-xs font-bold text-slate-800 dark:text-slate-200">₹{cust.rate}/L</p>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Link href={`/milk-entry?customerId=${cust.id}`}>
-                          <Button variant="outline" size="sm" className="px-2.5 py-1 text-xs">Log Milk</Button>
-                        </Link>
-                        <Link href={`/customers/${cust.id}`}>
-                          <Button variant="primary" size="sm" className="px-2.5 py-1 text-xs bg-blue-600 hover:bg-blue-700 text-white">Report</Button>
-                        </Link>
-                      </div>
+                    
+                    <div className="text-right">
+                      <Badge variant={MILK_TYPE_COLORS[cust.milkType]} className="text-[10px]">
+                        {MILK_TYPE_LABELS[cust.milkType]}
+                      </Badge>
+                      {cust.milkType === 'both' ? (
+                        <p className="text-[10px] text-slate-500 mt-0.5">
+                          Cow ₹{cust.rateCow} · Buffalo ₹{cust.rateBuffalo}
+                        </p>
+                      ) : (
+                        <p className="text-xs font-bold text-slate-800 dark:text-slate-200 mt-0.5">₹{cust.rate}/L</p>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -168,7 +164,7 @@ export default function CustomersPage() {
                   <p className="text-xs font-semibold text-blue-700 dark:text-blue-400">Individual rates for each milk type:</p>
                   <div className="grid grid-cols-2 gap-3">
                     <Input
-                      label="🐄 Cow Rate (₹/L)"
+                      label="Cow Rate (₹/L)"
                       type="number"
                       min="1"
                       value={rateCow}
@@ -177,7 +173,7 @@ export default function CustomersPage() {
                       disabled={isSaving}
                     />
                     <Input
-                      label="🐃 Buffalo Rate (₹/L)"
+                      label="Buffalo Rate (₹/L)"
                       type="number"
                       min="1"
                       value={rateBuffalo}
