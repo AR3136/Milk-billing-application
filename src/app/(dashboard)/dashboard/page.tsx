@@ -126,60 +126,29 @@ export default function DashboardPage() {
           />
         </div>
 
-        {/* Main Content Spliter */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Recent Deliveries */}
-          <div className="lg:col-span-2 space-y-4">
-            <Card title="Today's Milk Collections" subtitle="Real-time collection logging tracker">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse text-xs">
-                  <thead>
-                    <tr className="border-b border-slate-100 dark:border-slate-800 text-slate-500 dark:text-slate-400 uppercase font-semibold">
-                      <th className="py-3 px-4">Customer</th>
-                      <th className="py-3 px-4">Shift</th>
-                      <th className="py-3 px-4">Milk Type</th>
-                      <th className="py-3 px-4">Qty (L)</th>
-                      <th className="py-3 px-4 text-right">Amount</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-50 dark:divide-slate-800/50">
-                    {milkEntries.slice(0, 4).map((entry) => (
-                      <tr key={entry.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/30 transition-colors">
-                        <td className="py-3.5 px-4 font-semibold text-slate-700 dark:text-slate-200">{entry.customerName}</td>
-                        <td className="py-3.5 px-4">
-                          <Badge variant={entry.shift === 'morning' ? 'primary' : 'warning'}>
-                            {entry.shift}
-                          </Badge>
-                        </td>
-                        <td className="py-3.5 px-4 uppercase text-slate-500">{entry.milkType || 'cow'}</td>
-                        <td className="py-3.5 px-4 font-medium">{entry.quantity} L</td>
-                        <td className="py-3.5 px-4 text-right font-bold text-slate-800 dark:text-slate-100">₹{entry.amount}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </Card>
-          </div>
-
-          {/* Quick Actions Panel */}
-          <div className="space-y-4">
-            <Card title="Recent Transactions" subtitle="Payment payouts & collections history">
-              <div className="space-y-3">
-                {payments.slice(0, 3).map((pay) => (
-                  <div key={pay.id} className="flex justify-between items-center p-3 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800/80 rounded-xl hover:translate-x-1 duration-200">
-                    <div>
-                      <p className="text-xs font-semibold text-slate-800 dark:text-slate-200">{pay.customerName}</p>
-                      <p className="text-[10px] text-slate-500 dark:text-slate-400 capitalize">{pay.method} • {pay.date}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm font-bold text-emerald-600 dark:text-emerald-400">+₹{pay.amount}</p>
-                    </div>
+        {/* Main Content Splitter */}
+        <div className="w-full">
+          {/* Recent Transactions */}
+          <Card title="Recent Transactions" subtitle="Payment payouts & collections history">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
+              {payments.slice(0, 6).map((pay) => (
+                <div key={pay.id} className="flex justify-between items-center p-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800/80 rounded-2xl hover:translate-y-[-2px] hover:shadow-md transition-all duration-200">
+                  <div>
+                    <p className="text-xs font-bold text-slate-850 dark:text-slate-200">{pay.customerName}</p>
+                    <p className="text-[10px] text-slate-500 dark:text-slate-450 capitalize mt-0.5">{pay.method} • {pay.date}</p>
                   </div>
-                ))}
-              </div>
-            </Card>
-          </div>
+                  <div className="text-right">
+                    <p className="text-sm font-black text-emerald-600 dark:text-emerald-450">+₹{pay.amount.toFixed(2)}</p>
+                  </div>
+                </div>
+              ))}
+              {payments.length === 0 && (
+                <div className="col-span-full py-8 text-center text-xs text-slate-500">
+                  No payment transactions logged yet.
+                </div>
+              )}
+            </div>
+          </Card>
         </div>
       </div>
     </DashboardLayoutShell>
