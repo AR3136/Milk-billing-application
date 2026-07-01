@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { DashboardLayoutShell } from '@/components/layout';
 import { Card, Button, Input, Badge } from '@/components/ui';
@@ -35,6 +35,21 @@ export default function CustomersPage() {
   const [rateCow, setRateCow] = useState(45);
   const [rateBuffalo, setRateBuffalo] = useState(60);
   const [isSaving, setIsSaving] = useState(false);
+
+  // Load default rates from settings on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedCow = localStorage.getItem('rate_cow');
+      const savedBuffalo = localStorage.getItem('rate_buffalo');
+      if (savedCow) {
+        setRate(Number(savedCow));
+        setRateCow(Number(savedCow));
+      }
+      if (savedBuffalo) {
+        setRateBuffalo(Number(savedBuffalo));
+      }
+    }
+  }, []);
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();

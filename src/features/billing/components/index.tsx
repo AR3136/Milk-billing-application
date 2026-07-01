@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, Button, Input, Badge } from '@/components/ui';
 import { Bill } from '../types';
 import { useAppStore } from '@/lib/store';
@@ -15,6 +15,20 @@ export const BillInvoiceView: React.FC<BillInvoiceViewProps> = ({ bill, onClose 
   const milkEntries = useAppStore(state => state.milkEntries);
   const matchedCust = customers.find(c => c.id === bill.customer_id);
   const phone = matchedCust?.phone || '9876543210';
+
+  const [bizName, setBizName] = useState('Ganga Dairy Farm');
+  const [bizAddress, setBizAddress] = useState('Ganga Chowk, Sector-4, Pune');
+  const [bizGreeting, setBizGreeting] = useState('Hello');
+  const [bizThankYou, setBizThankYou] = useState('Please clear the dues. Thank you!');
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setBizName(localStorage.getItem('business_name') || 'Ganga Dairy Farm');
+      setBizAddress(localStorage.getItem('business_address') || 'Ganga Chowk, Sector-4, Pune');
+      setBizGreeting(localStorage.getItem('whatsapp_greeting') || 'Hello');
+      setBizThankYou(localStorage.getItem('whatsapp_thankyou') || 'Please clear the dues. Thank you!');
+    }
+  }, []);
 
   // Get actual entries for this customer in this billing cycle to calculate precise values
   const cycleEntries = milkEntries.filter(
@@ -58,7 +72,8 @@ export const BillInvoiceView: React.FC<BillInvoiceViewProps> = ({ bill, onClose 
       breakdownText = `Milk Qty: ${displayQty} L\nAvg Rate: ₹${avgRate.toFixed(2)}/L\n`;
     }
 
-    return `*GANGA DAIRY FARM INVOICE*\n` +
+    return `${bizGreeting} ${bill.customer_name},\n\n` +
+      `*${bizName.toUpperCase()} INVOICE*\n` +
       `---------------------------------\n` +
       `Invoice No: ${bill.bill_number}\n` +
       `Customer: ${bill.customer_name}\n` +
@@ -70,7 +85,7 @@ export const BillInvoiceView: React.FC<BillInvoiceViewProps> = ({ bill, onClose 
       `---------------------------------\n` +
       `*Net Payable: ₹${((bill.balance_forward || 0) + displayAmt).toFixed(2)}*\n` +
       `---------------------------------\n` +
-      `Please clear the dues. Thank you!`;
+      `${bizThankYou}`;
   };
 
   const handlePrint = () => {
@@ -98,9 +113,9 @@ export const BillInvoiceView: React.FC<BillInvoiceViewProps> = ({ bill, onClose 
         <div>
           <div className="flex items-center gap-2 mb-2">
             <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-blue-600 to-emerald-500 flex items-center justify-center text-white font-bold">M</div>
-            <span className="font-bold text-slate-800 tracking-tight">Ganga Dairy Farm</span>
+            <span className="font-bold text-slate-800 tracking-tight">{bizName}</span>
           </div>
-          <p className="text-[10px] text-slate-500 dark:text-slate-400">Ganga Chowk, Sector-4, Pune</p>
+          <p className="text-[10px] text-slate-500 dark:text-slate-400">{bizAddress}</p>
         </div>
         <div className="text-right text-xs">
           <h2 className="text-sm font-bold text-slate-800 uppercase tracking-wide">Invoice Bill</h2>
