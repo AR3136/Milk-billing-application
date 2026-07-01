@@ -14,25 +14,29 @@ export default function BillingPage() {
   const payments = useAppStore((state) => state.payments);
   const [selectedBill, setSelectedBill] = useState<Bill | null>(null);
 
-  // Set default dates for the current billing cycle (15 days range)
-  const defaultFromDate = '2026-06-16';
-  const defaultToDate = '2026-06-30';
 
   const handleAction = (cust: any, idx: number) => {
-    // 1. Calculate actual milk quantities logged for this customer in this cycle
+    // Get all entries for this customer to find the earliest logged milk entry
+    const custEntries = milkEntries.filter(e => e.customerId === cust.id);
+    const sortedEntries = [...custEntries].sort((a, b) => a.date.localeCompare(b.date));
+
+    // Billing Cycle: From the day of the first entry to today
+    const fromDate = sortedEntries.length > 0 ? sortedEntries[0].date : '2026-06-16';
+    const toDate = new Date().toISOString().split('T')[0];
+
     const cycleEntries = milkEntries.filter(
-      e => e.customerId === cust.id && e.date >= defaultFromDate && e.date <= defaultToDate
+      e => e.customerId === cust.id && e.date >= fromDate && e.date <= toDate
     );
 
     const totalQuantity = cycleEntries.reduce((sum, e) => sum + e.quantity, 0);
     const cycleTotalAmount = cycleEntries.reduce((sum, e) => sum + e.amount, 0);
 
-    // 2. Fetch payments made during this cycle
+    // Fetch payments made during this cycle
     const cyclePayments = payments
-      .filter(p => p.customerId === cust.id && p.date >= defaultFromDate && p.date <= defaultToDate)
+      .filter(p => p.customerId === cust.id && p.date >= fromDate && p.date <= toDate)
       .reduce((sum, p) => sum + p.amount, 0);
 
-    // 3. Compute net balance
+    // Compute net balance
     const balanceForward = Math.max(0, cust.balance - cycleTotalAmount + cyclePayments);
     const netPayable = cycleTotalAmount + balanceForward;
 
@@ -41,8 +45,8 @@ export default function BillingPage() {
       bill_number: `INV-2026-00${idx + 1}`,
       customer_id: cust.id,
       customer_name: cust.name,
-      from_date: defaultFromDate,
-      to_date: defaultToDate,
+      from_date: fromDate,
+      to_date: toDate,
       total_quantity: totalQuantity,
       total_amount: cycleTotalAmount,
       paid_amount: cyclePayments,

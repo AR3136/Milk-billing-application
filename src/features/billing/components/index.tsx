@@ -59,13 +59,13 @@ export const BillInvoiceView: React.FC<BillInvoiceViewProps> = ({ bill, onClose 
   const buildTextInvoice = () => {
     let breakdownText = '';
     if (cowQty > 0) {
-      breakdownText += `Cow Milk: ${cowQty} L @ ₹${cowRate.toFixed(2)}/L = ₹${cowAmt.toFixed(2)}\n`;
+      breakdownText += `Cow Milk: ${cowQty} L X ₹${cowRate.toFixed(2)}/L = ₹${cowAmt.toFixed(2)}\n`;
     }
     if (buffaloQty > 0) {
-      breakdownText += `Buffalo Milk: ${buffaloQty} L @ ₹${buffaloRate.toFixed(2)}/L = ₹${buffaloAmt.toFixed(2)}\n`;
+      breakdownText += `Buffalo Milk: ${buffaloQty} L X ₹${buffaloRate.toFixed(2)}/L = ₹${buffaloAmt.toFixed(2)}\n`;
     }
     if (mixedQty > 0) {
-      breakdownText += `Mixed Milk: ${mixedQty} L @ ₹${mixedRate.toFixed(2)}/L = ₹${mixedAmt.toFixed(2)}\n`;
+      breakdownText += `Mixed Milk: ${mixedQty} L X ₹${mixedRate.toFixed(2)}/L = ₹${mixedAmt.toFixed(2)}\n`;
     }
 
     if (!breakdownText) {
