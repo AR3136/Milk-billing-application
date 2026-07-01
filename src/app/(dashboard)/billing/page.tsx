@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { DashboardLayoutShell } from '@/components/layout';
 import { Card, Badge, Button } from '@/components/ui';
-import { Receipt, Eye } from 'lucide-react';
+import { Receipt, Eye, Calendar } from 'lucide-react';
 import { useAppStore } from '@/lib/store';
 import { BillInvoiceView } from '@/features/billing/components';
 import { Bill } from '@/features/billing/types';
@@ -14,29 +14,27 @@ export default function BillingPage() {
   const payments = useAppStore((state) => state.payments);
   const [selectedBill, setSelectedBill] = useState<Bill | null>(null);
 
+  // Set default dates for the current billing cycle
+  const defaultFromDate = '2026-06-16';
+  const defaultToDate = '2026-06-30';
+  const [startDate, setStartDate] = useState(defaultFromDate);
+  const [endDate, setEndDate] = useState(defaultToDate);
 
   const handleAction = (cust: any, idx: number) => {
-    // Get all entries for this customer to find the earliest logged milk entry
-    const custEntries = milkEntries.filter(e => e.customerId === cust.id);
-    const sortedEntries = [...custEntries].sort((a, b) => a.date.localeCompare(b.date));
-
-    // Billing Cycle: From the day of the first entry to today
-    const fromDate = sortedEntries.length > 0 ? sortedEntries[0].date : '2026-06-16';
-    const toDate = new Date().toISOString().split('T')[0];
-
+    // 1. Calculate actual milk quantities logged for this customer in selected cycle
     const cycleEntries = milkEntries.filter(
-      e => e.customerId === cust.id && e.date >= fromDate && e.date <= toDate
+      e => e.customerId === cust.id && e.date >= startDate && e.date <= endDate
     );
 
     const totalQuantity = cycleEntries.reduce((sum, e) => sum + e.quantity, 0);
     const cycleTotalAmount = cycleEntries.reduce((sum, e) => sum + e.amount, 0);
 
-    // Fetch payments made during this cycle
+    // 2. Fetch payments made during this cycle
     const cyclePayments = payments
-      .filter(p => p.customerId === cust.id && p.date >= fromDate && p.date <= toDate)
+      .filter(p => p.customerId === cust.id && p.date >= startDate && p.date <= endDate)
       .reduce((sum, p) => sum + p.amount, 0);
 
-    // Compute net balance
+    // 3. Compute net balance
     const balanceForward = Math.max(0, cust.balance - cycleTotalAmount + cyclePayments);
     const netPayable = cycleTotalAmount + balanceForward;
 
@@ -45,8 +43,8 @@ export default function BillingPage() {
       bill_number: `INV-2026-00${idx + 1}`,
       customer_id: cust.id,
       customer_name: cust.name,
-      from_date: fromDate,
-      to_date: toDate,
+      from_date: startDate,
+      to_date: endDate,
       total_quantity: totalQuantity,
       total_amount: cycleTotalAmount,
       paid_amount: cyclePayments,
@@ -60,15 +58,44 @@ export default function BillingPage() {
     setSelectedBill(dynamicBill);
   };
 
+  const getFormattedRange = () => {
+    try {
+      const s = new Date(startDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' });
+      const e = new Date(endDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+      return `${s} - ${e}`;
+    } catch {
+      return `${startDate} - ${endDate}`;
+    }
+  };
+
   return (
     <DashboardLayoutShell title="Invoices & Billing">
       <div className="space-y-6">
         
-        {/* Billing Overview header */}
-        <div className="flex justify-between items-center gap-4 flex-wrap">
-          <div>
-            <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100">Cycle Billings</h2>
-            <p className="text-xs text-slate-500">Generate cycle invoices for delivered milk units</p>
+        {/* Billing Cycle Range Controls */}
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-100 dark:border-slate-800/80 flex flex-wrap items-end justify-between gap-4">
+          <div className="flex flex-wrap items-center gap-3 text-xs">
+            <div className="space-y-1">
+              <label className="font-semibold text-slate-500">Cycle Start Date</label>
+              <input
+                type="date"
+                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={startDate}
+                onChange={e => setStartDate(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="font-semibold text-slate-500">Cycle End Date</label>
+              <input
+                type="date"
+                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={endDate}
+                onChange={e => setEndDate(e.target.value)}
+              />
+            </div>
+          </div>
+          <div className="text-xs text-slate-400 font-medium">
+            Active Cycle Period: <span className="font-bold text-blue-600 dark:text-blue-400">{getFormattedRange()}</span>
           </div>
         </div>
 
@@ -91,7 +118,7 @@ export default function BillingPage() {
                   <tr key={cust.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/30 transition-colors">
                     <td className="py-3.5 px-4 font-semibold text-slate-500">#INV-2026-00{idx+1}</td>
                     <td className="py-3.5 px-4 font-bold text-slate-800 dark:text-slate-200">{cust.name}</td>
-                    <td className="py-3.5 px-4 text-slate-500">Jun 16 - Jun 30, 2026</td>
+                    <td className="py-3.5 px-4 text-slate-500">{getFormattedRange()}</td>
                     <td className="py-3.5 px-4">
                       {cust.balance > 0 ? (
                         <span className="inline-flex items-center gap-1 text-rose-600 font-medium bg-rose-50 dark:bg-rose-950/20 px-2 py-0.5 rounded-md">
