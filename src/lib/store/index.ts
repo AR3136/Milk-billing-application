@@ -155,6 +155,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       const { data: dbEntries, error: entryError } = await supabase
         .from('milk_entries')
         .select('*')
+        .eq('user_id', user.id)
         .order('date', { ascending: false })
         .limit(200);
 
@@ -287,7 +288,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       .from('milk_entries')
       .insert([{
         customer_id: e.customerId,
-        created_by: user.id,
+        user_id: user.id,
         date: e.date,
         shift: e.shift,
         quantity: e.quantity,
