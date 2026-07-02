@@ -176,7 +176,15 @@ export default function CustomersPage() {
                 <select
                   className="w-full px-3 py-2.5 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 dark:text-slate-100"
                   value={milkType}
-                  onChange={e => setMilkType(e.target.value as MilkType)}
+                  onChange={e => {
+                    const type = e.target.value as MilkType;
+                    setMilkType(type);
+                    if (typeof window !== 'undefined') {
+                      if (type === 'cow') setRate(Number(localStorage.getItem('rate_cow')) || 45);
+                      else if (type === 'buffalo') setRate(Number(localStorage.getItem('rate_buffalo')) || 60);
+                      else if (type === 'mixed') setRate(Number(localStorage.getItem('rate_mixed')) || 52);
+                    }
+                  }}
                   disabled={isSaving}
                 >
                   <option value="cow">Cow Milk</option>

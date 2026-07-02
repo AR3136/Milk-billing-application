@@ -81,6 +81,7 @@ interface AppStore {
   addExpense: (ex: Omit<Expense, 'id'>) => Promise<void>;
   deleteCustomer: (id: string) => Promise<void>;
   deleteMilkEntry: (id: string) => Promise<void>;
+  updateAllCustomerRates: (cowRate: number, buffaloRate: number, mixedRate: number) => Promise<void>;
 }
 
 export const useAppStore = create<AppStore>((set, get) => ({
@@ -435,6 +436,56 @@ export const useAppStore = create<AppStore>((set, get) => ({
     // Update local state
     set((state) => ({
       customers: state.customers.filter(c => c.id !== id)
+    }));
+  },
+
+  updateAllCustomerRates: async (cowRate, buffaloRate, mixedRate) => {
+    const supabase = createClient();
+    const user = get().currentUser;
+    if (!user) throw new Error('Not authenticated');
+
+    // Update DB: this updates the standard single rate_per_liter to cow/buffalo/mixed based on their current milkType,
+    // and ALSO updates the rate_cow / rate_buffalo columns.
+    
+    // Update cow
+    await supabase.from('customers')
+      .update({ rate_per_liter: cowRate, rate_cow: cowRate })
+      .eq('user_id', user.id)
+      .eq('milk_type', 'cow');
+      
+    // Update buffalo
+    await supabase.from('customers')
+      .update({ rate_per_liter: buffaloRate, rate_buffalo: buffaloRate })
+      .eq('user_id', user.id)
+      .eq('milk_type', 'buffalo');
+      
+    // Update mixed
+    await supabase.from('customers')
+      .update({ rate_per_liter: mixedRate })
+      .eq('user_id', user.id)
+      .eq('milk_type', 'mixed');
+      
+    // Update both type's individual rates
+    await supabase.from('customers')
+      .update({ rate_cow: cowRate, rate_buffalo: buffaloRate })
+      .eq('user_id', user.id)
+      .eq('milk_type', 'both');
+
+    // Update local state
+    set((state) => ({
+      customers: state.customers.map(c => {
+        let newRate = c.rate;
+        if (c.milkType === 'cow') newRate = cowRate;
+        else if (c.milkType === 'buffalo') newRate = buffaloRate;
+        else if (c.milkType === 'mixed') newRate = mixedRate;
+        
+        return {
+          ...c,
+          rate: newRate,
+          rateCow: cowRate,
+          rateBuffalo: buffaloRate
+        };
+      })
     }));
   },
 

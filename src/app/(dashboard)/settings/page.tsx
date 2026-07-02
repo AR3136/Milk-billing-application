@@ -6,7 +6,10 @@ import { Card, Button, Input } from '@/components/ui';
 import { Save, ToggleLeft, ToggleRight, MessageSquare } from 'lucide-react';
 import { toast } from 'sonner';
 
+import { useAppStore } from '@/lib/store';
+
 export default function SettingsPage() {
+  const updateAllCustomerRates = useAppStore(state => state.updateAllCustomerRates);
   const [businessName, setBusinessName] = useState('Ganga Dairy Farm');
   const [helpline, setHelpline] = useState('+91 98765 43210');
   const [address, setAddress] = useState('Ganga Chowk, Sector-4, Pune, Maharashtra');
@@ -42,14 +45,20 @@ export default function SettingsPage() {
     }
   }, []);
 
-  const handleSaveGeneral = () => {
+  const handleSaveGeneral = async () => {
     localStorage.setItem('business_name', businessName);
     localStorage.setItem('business_phone', helpline);
     localStorage.setItem('business_address', address);
     localStorage.setItem('rate_cow', cowRate);
     localStorage.setItem('rate_buffalo', buffaloRate);
     localStorage.setItem('rate_mixed', mixedRate);
-    toast.success('General settings saved successfully!');
+    
+    try {
+      await updateAllCustomerRates(Number(cowRate), Number(buffaloRate), Number(mixedRate));
+      toast.success('Settings saved and all existing customer rates updated globally!');
+    } catch (err: any) {
+      toast.error(err.message || 'Settings saved, but failed to update existing customers.');
+    }
   };
 
   const handleSaveTemplates = () => {
