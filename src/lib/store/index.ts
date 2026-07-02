@@ -155,7 +155,6 @@ export const useAppStore = create<AppStore>((set, get) => ({
       const { data: dbEntries, error: entryError } = await supabase
         .from('milk_entries')
         .select('*')
-        .eq('user_id', user.id)
         .order('date', { ascending: false })
         .limit(200);
 
@@ -288,12 +287,11 @@ export const useAppStore = create<AppStore>((set, get) => ({
       .from('milk_entries')
       .insert([{
         customer_id: e.customerId,
-        user_id: user.id,
+        created_by: user.id,
         date: e.date,
         shift: e.shift,
         quantity: e.quantity,
         rate_applied: e.rate,
-        milk_type: e.milkType,
         amount: calculatedAmount
       }])
       .select()
@@ -311,7 +309,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       quantity: Number(inserted.quantity),
       rate: Number(inserted.rate_applied),
       amount,
-      milkType: (inserted.milk_type ?? e.milkType) as MilkType,
+      milkType: e.milkType,
     };
 
     set((state) => ({
@@ -450,25 +448,21 @@ export const useAppStore = create<AppStore>((set, get) => ({
     // Update cow
     await supabase.from('customers')
       .update({ rate_per_liter: cowRate, rate_cow: cowRate })
-      .eq('user_id', user.id)
       .eq('milk_type', 'cow');
       
     // Update buffalo
     await supabase.from('customers')
       .update({ rate_per_liter: buffaloRate, rate_buffalo: buffaloRate })
-      .eq('user_id', user.id)
       .eq('milk_type', 'buffalo');
       
     // Update mixed
     await supabase.from('customers')
       .update({ rate_per_liter: mixedRate })
-      .eq('user_id', user.id)
       .eq('milk_type', 'mixed');
       
     // Update both type's individual rates
     await supabase.from('customers')
       .update({ rate_cow: cowRate, rate_buffalo: buffaloRate })
-      .eq('user_id', user.id)
       .eq('milk_type', 'both');
 
     // Update local state
