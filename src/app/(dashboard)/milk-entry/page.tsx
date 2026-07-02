@@ -233,7 +233,7 @@ export default function MilkEntryPage() {
 
                 {/* Quantity */}
                 <div className="space-y-3">
-                  <div className="flex gap-2 items-end">
+                  <div className="flex flex-col sm:flex-row gap-3 sm:items-end">
                     <div className="flex-1">
                       <Input
                         label="Quantity (Liters)"
@@ -247,13 +247,13 @@ export default function MilkEntryPage() {
                         disabled={isSaving}
                       />
                     </div>
-                    <div className="flex flex-col gap-2">
+                    <div className="flex gap-2 sm:flex-col shrink-0">
                       <Button
                         type="button"
                         variant="outline"
                         onClick={handleAsYesterday}
                         disabled={isSaving || !customerId}
-                        className="h-[38px] px-3 text-xs border-dashed whitespace-nowrap"
+                        className="flex-1 sm:flex-none h-[38px] px-3 text-xs border-dashed justify-center"
                       >
                         <History className="w-3.5 h-3.5 mr-1" /> Copy prev
                       </Button>
@@ -262,7 +262,7 @@ export default function MilkEntryPage() {
                         variant="outline"
                         onClick={handleNoMilkWhatsApp}
                         disabled={isSaving || !customerId || !selectedCust?.phone}
-                        className="h-[38px] px-3 text-xs border-dashed whitespace-nowrap text-red-600 border-red-200 hover:text-red-700 hover:bg-red-50 dark:border-red-900/50 dark:text-red-400 dark:hover:bg-red-900/20"
+                        className="flex-1 sm:flex-none h-[38px] px-3 text-xs border-dashed text-red-600 border-red-200 hover:text-red-700 hover:bg-red-50 dark:border-red-900/50 dark:text-red-400 dark:hover:bg-red-900/20 justify-center"
                       >
                         <MessageSquare className="w-3.5 h-3.5 mr-1" /> No Milk Msg
                       </Button>

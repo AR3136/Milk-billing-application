@@ -132,14 +132,14 @@ export default function CustomersPage() {
                       </div>
                     </div>
                     
-                    <div className="flex items-center gap-4">
-                      <div className="text-right hidden sm:block">
-                        <Badge variant={MILK_TYPE_COLORS[cust.milkType]} className="text-[10px]">
+                    <div className="flex items-center gap-2 sm:gap-4 shrink-0">
+                      <div className="text-right flex flex-col items-end shrink-0">
+                        <Badge variant={MILK_TYPE_COLORS[cust.milkType]} className="text-[9px] sm:text-[10px] px-1.5 py-0.5 sm:px-2">
                           {MILK_TYPE_LABELS[cust.milkType]}
                         </Badge>
                         {cust.milkType === 'both' ? (
-                          <p className="text-[10px] text-slate-500 mt-0.5">
-                            Cow ₹{cust.rateCow} · Buffalo ₹{cust.rateBuffalo}
+                          <p className="text-[9px] sm:text-[10px] text-slate-500 mt-0.5 whitespace-nowrap">
+                            Cow ₹{cust.rateCow} · Buf ₹{cust.rateBuffalo}
                           </p>
                         ) : (
                           <p className="text-xs font-bold text-slate-800 dark:text-slate-200 mt-0.5">₹{cust.rate}/L</p>

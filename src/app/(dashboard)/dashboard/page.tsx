@@ -31,34 +31,34 @@ export default function DashboardPage() {
     <DashboardLayoutShell title="Overview Dashboard">
       <div className="space-y-6">
         {/* Welcome Banner */}
-        <div className="p-6 bg-gradient-to-r from-blue-600 to-emerald-500 rounded-2xl text-white shadow-lg flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div className="p-4 sm:p-6 bg-gradient-to-r from-blue-600 to-emerald-500 rounded-2xl text-white shadow-lg flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div className="space-y-1">
-            <h2 className="text-xl md:text-2xl font-bold flex items-center gap-2">
+            <h2 className="text-lg sm:text-xl md:text-2xl font-bold flex items-center gap-2">
               {greeting}, {currentUser?.name?.split(' ')[0] || 'Welcome'}! <Sparkles className="w-5 h-5 text-amber-300 fill-amber-300" />
             </h2>
-            <p className="text-xs md:text-sm text-blue-50">Here is the quick snapshot of your milk collections and billings today.</p>
+            <p className="text-[11px] sm:text-xs md:text-sm text-blue-50">Here is the quick snapshot of your milk collections and billings today.</p>
           </div>
-          <Badge variant="secondary" className="bg-emerald-400/20 text-white border-none py-1 px-3">
+          <Badge variant="secondary" className="bg-emerald-400/20 text-white border-none py-1 px-3 text-[10px] sm:text-xs">
             {today}
           </Badge>
         </div>
 
         {/* Quick Access Portal (Just above dashboard stats) */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
           {/* Row 1: Customers & Billing */}
-          <div className="grid grid-cols-2 gap-4">
-            <Link href="/customers" className="flex items-center gap-3 p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl hover:border-blue-500/50 transition-all shadow-sm hover:shadow-md">
-              <div className="w-10 h-10 bg-blue-500/10 text-blue-500 rounded-xl flex items-center justify-center shrink-0">
-                <Users className="w-5 h-5" />
+          <div className="grid grid-cols-2 gap-3 sm:gap-4">
+            <Link href="/customers" className="flex items-center gap-3 p-3.5 sm:p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl hover:border-blue-500/50 transition-all shadow-sm hover:shadow-md">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 bg-blue-500/10 text-blue-500 rounded-xl flex items-center justify-center shrink-0">
+                <Users className="w-4.5 h-4.5 sm:w-5 sm:h-5" />
               </div>
               <div className="min-w-0">
                 <h4 className="text-xs font-bold text-slate-850 dark:text-slate-200 truncate">Customers</h4>
                 <p className="text-[9px] text-slate-500 truncate">Manage members</p>
               </div>
             </Link>
-            <Link href="/billing" className="flex items-center gap-3 p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl hover:border-emerald-500/50 transition-all shadow-sm hover:shadow-md">
-              <div className="w-10 h-10 bg-emerald-500/10 text-emerald-500 rounded-xl flex items-center justify-center shrink-0">
-                <Receipt className="w-5 h-5" />
+            <Link href="/billing" className="flex items-center gap-3 p-3.5 sm:p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl hover:border-emerald-500/50 transition-all shadow-sm hover:shadow-md">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 bg-emerald-500/10 text-emerald-500 rounded-xl flex items-center justify-center shrink-0">
+                <Receipt className="w-4.5 h-4.5 sm:w-5 sm:h-5" />
               </div>
               <div className="min-w-0">
                 <h4 className="text-xs font-bold text-slate-850 dark:text-slate-200 truncate">Billing</h4>
@@ -68,19 +68,19 @@ export default function DashboardPage() {
           </div>
           
           {/* Row 2: Payments & Expenses */}
-          <div className="grid grid-cols-2 gap-4">
-            <Link href="/payments" className="flex items-center gap-3 p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl hover:border-violet-500/50 transition-all shadow-sm hover:shadow-md">
-              <div className="w-10 h-10 bg-violet-500/10 text-violet-500 rounded-xl flex items-center justify-center shrink-0">
-                <CreditCard className="w-5 h-5" />
+          <div className="grid grid-cols-2 gap-3 sm:gap-4">
+            <Link href="/payments" className="flex items-center gap-3 p-3.5 sm:p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl hover:border-violet-500/50 transition-all shadow-sm hover:shadow-md">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 bg-violet-500/10 text-violet-500 rounded-xl flex items-center justify-center shrink-0">
+                <CreditCard className="w-4.5 h-4.5 sm:w-5 sm:h-5" />
               </div>
               <div className="min-w-0">
                 <h4 className="text-xs font-bold text-slate-850 dark:text-slate-200 truncate">Payments</h4>
                 <p className="text-[9px] text-slate-500 truncate">Collect dues & cash</p>
               </div>
             </Link>
-            <Link href="/expenses" className="flex items-center gap-3 p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl hover:border-amber-500/50 transition-all shadow-sm hover:shadow-md">
-              <div className="w-10 h-10 bg-amber-500/10 text-amber-500 rounded-xl flex items-center justify-center shrink-0">
-                <Wallet className="w-5 h-5" />
+            <Link href="/expenses" className="flex items-center gap-3 p-3.5 sm:p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl hover:border-amber-500/50 transition-all shadow-sm hover:shadow-md">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 bg-amber-500/10 text-amber-500 rounded-xl flex items-center justify-center shrink-0">
+                <Wallet className="w-4.5 h-4.5 sm:w-5 sm:h-5" />
               </div>
               <div className="min-w-0">
                 <h4 className="text-xs font-bold text-slate-850 dark:text-slate-200 truncate">Expenses</h4>
@@ -91,7 +91,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           <StatCard 
             title="Active Customers" 
             value={activeCustomers} 

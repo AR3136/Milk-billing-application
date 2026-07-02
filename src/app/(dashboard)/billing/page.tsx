@@ -107,18 +107,23 @@ export default function BillingPage() {
 
         {/* Invoice Grid */}
         <Card title="Active Billing Invoices" subtitle="Invoice cycles and current outstanding balances">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-xs">
-              <thead>
-                <tr className="border-b border-slate-100 dark:border-slate-800 text-slate-500 dark:text-slate-400 uppercase font-semibold">
-                  <th className="py-3 px-4">Invoice No</th>
-                  <th className="py-3 px-4">Client Name</th>
-                  <th className="py-3 px-4">Billing Range</th>
-                  <th className="py-3 px-4">Status</th>
-                  <th className="py-3 px-4 text-right">Dues Amount</th>
-                  <th className="py-3 px-4 text-center">Actions</th>
-                </tr>
-              </thead>
+          <div className="relative">
+            {/* Mobile swipe helper indicator */}
+            <div className="block md:hidden text-center text-[10px] text-blue-500/80 dark:text-blue-400/80 mb-2 font-semibold animate-pulse">
+              ← Swipe left/right to view table details →
+            </div>
+            <div className="overflow-x-auto w-full border border-slate-100 dark:border-slate-800 rounded-2xl">
+              <table className="w-full text-left border-collapse text-xs min-w-[600px]">
+                <thead>
+                  <tr className="border-b border-slate-100 dark:border-slate-800 text-slate-500 dark:text-slate-400 uppercase font-semibold">
+                    <th className="py-3 px-4">Invoice No</th>
+                    <th className="py-3 px-4">Client Name</th>
+                    <th className="py-3 px-4">Billing Range</th>
+                    <th className="py-3 px-4">Status</th>
+                    <th className="py-3 px-4 text-right">Dues Amount</th>
+                    <th className="py-3 px-4 text-center">Actions</th>
+                  </tr>
+                </thead>
               <tbody className="divide-y divide-slate-50 dark:divide-slate-800/50">
                 {customers.map((cust, idx) => (
                   <tr key={cust.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/30 transition-colors">
@@ -155,6 +160,7 @@ export default function BillingPage() {
               </tbody>
             </table>
           </div>
+         </div>
         </Card>
 
         {/* Invoice Modal Overlay */}
