@@ -20,6 +20,7 @@ export default function SettingsPage() {
   // WhatsApp templates
   const [whatsappGreeting, setWhatsappGreeting] = useState('Hello');
   const [whatsappThankyou, setWhatsappThankyou] = useState('Please clear the dues. Thank you!');
+  const [whatsappNoMilk, setWhatsappNoMilk] = useState('You did not take milk today.');
 
   // Toggles
   const [calcEnabled, setCalcEnabled] = useState(true);
@@ -38,6 +39,7 @@ export default function SettingsPage() {
       
       setWhatsappGreeting(localStorage.getItem('whatsapp_greeting') || 'Hello');
       setWhatsappThankyou(localStorage.getItem('whatsapp_thankyou') || 'Please clear the dues. Thank you!');
+      setWhatsappNoMilk(localStorage.getItem('whatsapp_no_milk') || 'You did not take milk today.');
 
       setCalcEnabled(localStorage.getItem('toggle_calc') !== 'false');
       setSmsEnabled(localStorage.getItem('toggle_sms') === 'true');
@@ -64,6 +66,7 @@ export default function SettingsPage() {
   const handleSaveTemplates = () => {
     localStorage.setItem('whatsapp_greeting', whatsappGreeting);
     localStorage.setItem('whatsapp_thankyou', whatsappThankyou);
+    localStorage.setItem('whatsapp_no_milk', whatsappNoMilk);
     toast.success('WhatsApp templates updated successfully!');
   };
 
@@ -138,6 +141,15 @@ export default function SettingsPage() {
                   value={whatsappThankyou}
                   onChange={(e) => setWhatsappThankyou(e.target.value)}
                   placeholder="e.g. Please clear the dues. Thank you!"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 gap-4">
+                <Input 
+                  label="No Milk Message" 
+                  value={whatsappNoMilk}
+                  onChange={(e) => setWhatsappNoMilk(e.target.value)}
+                  placeholder="Message for when they haven't taken milk today"
                 />
               </div>
 

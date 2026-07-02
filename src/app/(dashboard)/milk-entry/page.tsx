@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { DashboardLayoutShell } from '@/components/layout';
 import { Card, Badge, Button, Input } from '@/components/ui';
-import { Milk, ClipboardCheck, History, AlertCircle, Trash2, Loader2 } from 'lucide-react';
+import { Milk, ClipboardCheck, History, AlertCircle, Trash2, Loader2, MessageSquare } from 'lucide-react';
 import { useAppStore, MilkType } from '@/lib/store';
 import { toast } from 'sonner';
 
@@ -130,6 +130,23 @@ export default function MilkEntryPage() {
     setQuantity(newQty.toString());
   };
 
+  const handleNoMilkWhatsApp = () => {
+    if (!selectedCust) {
+      toast.error('Select a customer first.');
+      return;
+    }
+    if (!selectedCust.phone) {
+      toast.error('Customer has no phone number.');
+      return;
+    }
+    const msg = localStorage.getItem('whatsapp_no_milk') || 'You did not take milk today.';
+    const greeting = localStorage.getItem('whatsapp_greeting') || 'Hello';
+    
+    const text = `${greeting} ${selectedCust.name},\n\n${msg}`;
+    const url = `https://wa.me/91${selectedCust.phone.replace(/\D/g, '')}?text=${encodeURIComponent(text)}`;
+    window.open(url, '_blank');
+  };
+
   return (
     <DashboardLayoutShell title="Daily Milk Entry">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -230,15 +247,26 @@ export default function MilkEntryPage() {
                         disabled={isSaving}
                       />
                     </div>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={handleAsYesterday}
-                      disabled={isSaving || !customerId}
-                      className="h-[38px] px-3 text-xs border-dashed whitespace-nowrap"
-                    >
-                      <History className="w-3.5 h-3.5 mr-1" /> Copy prev
-                    </Button>
+                    <div className="flex flex-col gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handleAsYesterday}
+                        disabled={isSaving || !customerId}
+                        className="h-[38px] px-3 text-xs border-dashed whitespace-nowrap"
+                      >
+                        <History className="w-3.5 h-3.5 mr-1" /> Copy prev
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handleNoMilkWhatsApp}
+                        disabled={isSaving || !customerId || !selectedCust?.phone}
+                        className="h-[38px] px-3 text-xs border-dashed whitespace-nowrap text-red-600 border-red-200 hover:text-red-700 hover:bg-red-50 dark:border-red-900/50 dark:text-red-400 dark:hover:bg-red-900/20"
+                      >
+                        <MessageSquare className="w-3.5 h-3.5 mr-1" /> No Milk Msg
+                      </Button>
+                    </div>
                   </div>
 
                   {/* Quick Add Buttons */}
