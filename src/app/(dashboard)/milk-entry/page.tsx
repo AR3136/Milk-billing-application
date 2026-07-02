@@ -89,6 +89,7 @@ export default function MilkEntryPage() {
         quantity: Number(quantity),
         rate: effectiveRate,
         milkType: effectiveMilkType,
+        amount: Math.round(Number(quantity) * effectiveRate),
       });
       toast.success(`✓ Logged ${quantity} L for ${selectedCust.name} (${effectiveMilkType})`);
       setQuantity('');
@@ -280,7 +281,7 @@ export default function MilkEntryPage() {
                   <div className="text-xs text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-800 rounded-lg px-3 py-2">
                     Rate: <span className="font-semibold">₹{effectiveRate}/L</span>
                     {' · '}Total: <span className="font-bold text-slate-800 dark:text-slate-100">
-                      ₹{(Number(quantity) * effectiveRate).toFixed(2)}
+                      ₹{Math.round(Number(quantity) * effectiveRate)}
                     </span>
                   </div>
                 )}

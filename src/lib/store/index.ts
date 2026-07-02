@@ -28,6 +28,17 @@ export interface MilkEntry {
   milkType: MilkType;
 }
 
+export interface MilkEntryFormData {
+  customerId: string;
+  customerName: string;
+  date: string;
+  shift: 'morning' | 'evening';
+  quantity: number;
+  rate: number;
+  milkType: MilkType;
+  amount?: number;
+}
+
 export interface Payment {
   id: string;
   customerId: string;
@@ -65,7 +76,7 @@ interface AppStore {
   loadCurrentUser: () => Promise<CurrentUser | null>;
   fetchData: () => Promise<void>;
   addCustomer: (c: Omit<Customer, 'id' | 'balance'>) => Promise<void>;
-  addMilkEntry: (e: Omit<MilkEntry, 'id' | 'amount'>) => Promise<void>;
+  addMilkEntry: (e: MilkEntryFormData) => Promise<void>;
   addPayment: (p: Omit<Payment, 'id'>) => Promise<void>;
   addExpense: (ex: Omit<Expense, 'id'>) => Promise<void>;
   deleteCustomer: (id: string) => Promise<void>;
@@ -270,6 +281,8 @@ export const useAppStore = create<AppStore>((set, get) => ({
     const isValidUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(e.customerId);
     if (!isValidUUID) throw new Error('Invalid customer selected. Please pick a valid customer.');
 
+    const calculatedAmount = e.amount !== undefined ? e.amount : Math.round(e.quantity * e.rate);
+
     const { data: inserted, error } = await supabase
       .from('milk_entries')
       .insert([{
@@ -280,13 +293,14 @@ export const useAppStore = create<AppStore>((set, get) => ({
         quantity: e.quantity,
         rate_applied: e.rate,
         milk_type: e.milkType,
+        amount: calculatedAmount
       }])
       .select()
       .single();
 
     if (error) throw new Error(error.message);
 
-    const amount = Number(inserted.amount ?? e.quantity * e.rate);
+    const amount = Number(inserted.amount ?? calculatedAmount);
     const newEntry: MilkEntry = {
       id: inserted.id,
       customerId: inserted.customer_id,
