@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { DashboardLayoutShell } from '@/components/layout';
 import { Card, Badge, Button } from '@/components/ui';
-import { Receipt, Eye, Calendar } from 'lucide-react';
+import { Receipt, Eye, Calendar, Bell } from 'lucide-react';
 import { useAppStore } from '@/lib/store';
 import { BillInvoiceView } from '@/features/billing/components';
 import { Bill } from '@/features/billing/types';
@@ -62,6 +62,13 @@ export default function BillingPage() {
     };
 
     setSelectedBill(dynamicBill);
+  };
+
+  const handleReminder = (cust: any) => {
+    const greeting = localStorage.getItem('whatsapp_greeting') || 'Hello';
+    const msg = `${greeting} ${cust.name},\n\nYou haven't collected your milk for today yet. Please let us know if you need it.\n\nThank you!`;
+    const url = `https://wa.me/91${cust.phone.replace(/\D/g, '')}?text=${encodeURIComponent(msg)}`;
+    window.open(url, '_blank');
   };
 
   const getFormattedRange = () => {
@@ -142,8 +149,17 @@ export default function BillingPage() {
                         <Button 
                           variant="outline" 
                           size="sm" 
+                          onClick={() => handleReminder(cust)}
+                          className="px-2 py-1 flex items-center gap-1 rounded-xl text-orange-600 border-orange-100 hover:bg-orange-50 dark:border-orange-900/50 dark:hover:bg-orange-900/30"
+                          title="Send No Milk Reminder"
+                        >
+                          <Bell className="w-3.5 h-3.5" /> Reminder
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
                           onClick={() => handleAction(cust, idx)}
-                          className="px-3 py-1 flex items-center gap-1 rounded-xl text-blue-600 border-blue-100 hover:bg-blue-50"
+                          className="px-3 py-1 flex items-center gap-1 rounded-xl text-blue-600 border-blue-100 hover:bg-blue-50 dark:border-blue-900/50 dark:hover:bg-blue-900/30"
                           title="View Invoice"
                         >
                           <Eye className="w-3.5 h-3.5" /> View Invoice
