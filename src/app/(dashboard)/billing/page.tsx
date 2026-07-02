@@ -14,9 +14,15 @@ export default function BillingPage() {
   const payments = useAppStore((state) => state.payments);
   const [selectedBill, setSelectedBill] = useState<Bill | null>(null);
 
-  // Set default dates for the current billing cycle
-  const defaultFromDate = '2026-06-16';
-  const defaultToDate = '2026-06-30';
+  // Set default dates for the current billing cycle (current month)
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, '0');
+  const d = String(new Date(y, now.getMonth() + 1, 0).getDate()).padStart(2, '0');
+  
+  const defaultFromDate = `${y}-${m}-01`;
+  const defaultToDate = `${y}-${m}-${d}`;
+
   const [startDate, setStartDate] = useState(defaultFromDate);
   const [endDate, setEndDate] = useState(defaultToDate);
 
