@@ -78,6 +78,11 @@ export const BillInvoiceView: React.FC<BillInvoiceViewProps> = ({ bill, onClose 
       breakdownText = `Milk Qty: ${cleanDisplayQty} L\nAvg Rate: ₹${avgRate.toFixed(2)}/L\n`;
     }
 
+    let paymentText = '';
+    if (bill.paid_amount > 0) {
+      paymentText = `Paid in Cycle: -₹${bill.paid_amount.toFixed(2)}\n`;
+    }
+
     return `${bizGreeting} ${bill.customer_name},\n\n` +
       `*${bizName.toUpperCase()} INVOICE*\n` +
       `---------------------------------\n` +
@@ -87,9 +92,10 @@ export const BillInvoiceView: React.FC<BillInvoiceViewProps> = ({ bill, onClose 
       `---------------------------------\n` +
       breakdownText +
       `Current Bill: ₹${displayAmt.toFixed(2)}\n` +
-      `Balance Forward: ₹${bill.balance_forward || 0}\n` +
+      `Balance Forward: ₹${(bill.balance_forward || 0).toFixed(2)}\n` +
+      paymentText +
       `---------------------------------\n` +
-      `*Net Payable: ₹${((bill.balance_forward || 0) + displayAmt).toFixed(2)}*\n` +
+      `*Net Payable: ₹${Math.max(0, (bill.balance_forward || 0) + displayAmt - bill.paid_amount).toFixed(2)}*\n` +
       `---------------------------------\n` +
       `${bizThankYou}`;
   };
@@ -203,12 +209,18 @@ export const BillInvoiceView: React.FC<BillInvoiceViewProps> = ({ bill, onClose 
           </div>
           <div className="flex justify-between">
             <span className="text-slate-500">Balance dues forward</span>
-            <span className="font-semibold text-slate-800">₹{bill.balance_forward || 0}</span>
+            <span className="font-semibold text-slate-800">₹{(bill.balance_forward || 0).toFixed(2)}</span>
           </div>
+          {bill.paid_amount > 0 && (
+            <div className="flex justify-between text-emerald-600 dark:text-emerald-450 font-medium">
+              <span>Paid in Cycle</span>
+              <span>-₹{bill.paid_amount.toFixed(2)}</span>
+            </div>
+          )}
           <hr className="border-slate-100" />
           <div className="flex justify-between text-sm font-extrabold">
             <span className="text-slate-800">Net Payable dues</span>
-            <span className="text-rose-600">₹{((bill.balance_forward || 0) + displayAmt).toFixed(2)}</span>
+            <span className="text-rose-600">₹{Math.max(0, (bill.balance_forward || 0) + displayAmt - bill.paid_amount).toFixed(2)}</span>
           </div>
         </div>
       </div>

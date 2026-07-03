@@ -40,10 +40,15 @@ export default function BillingPage() {
       .filter(p => p.customerId === cust.id && p.date >= startDate && p.date <= endDate)
       .reduce((sum, p) => sum + p.amount, 0);
 
-    // 3. Compute net balance
-    const rawBalanceForward = cust.balance - cycleTotalAmount + cyclePayments;
+    // 3. Compute balance forward (dues before cycle start date)
+    const priorEntries = milkEntries.filter(e => e.customerId === cust.id && e.date < startDate);
+    const priorMilk = priorEntries.reduce((sum, e) => sum + e.amount, 0);
+    const priorPayments = payments.filter(p => p.customerId === cust.id && p.date < startDate);
+    const priorPaid = priorPayments.reduce((sum, p) => sum + p.amount, 0);
+
+    const rawBalanceForward = priorMilk - priorPaid;
     const balanceForward = Math.abs(rawBalanceForward) < 0.01 ? 0 : parseFloat(rawBalanceForward.toFixed(2));
-    const netPayable = Math.round(cycleTotalAmount + balanceForward);
+    const netPayable = Math.round(Math.max(0, cycleTotalAmount + balanceForward - cyclePayments));
 
     const dynamicBill: Bill = {
       id: cust.id,
