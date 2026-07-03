@@ -294,7 +294,8 @@ export const useAppStore = create<AppStore>((set, get) => ({
         date: e.date,
         shift: e.shift,
         quantity: e.quantity,
-        rate_applied: e.rate
+        rate_applied: e.rate,
+        milk_type: e.milkType
       }])
       .select()
       .single();
