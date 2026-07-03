@@ -125,9 +125,11 @@ export default function MilkEntryPage() {
       return;
     }
     const current = Number(quantity) || 0;
-    const addedLiters = rs / effectiveRate;
-    // Round UP to 2 decimal places (e.g., 0.334 -> 0.34) to match DB scale NUMERIC(6,2)
-    const newQty = Math.ceil((current + addedLiters) * 100) / 100;
+    // Calculate the current base rupees by flooring to strip the ceiling rounding residue
+    const currentRupees = Math.floor(current * effectiveRate);
+    const targetRupees = currentRupees + rs;
+    // Round UP to 2 decimal places to match DB scale NUMERIC(6,2)
+    const newQty = Math.ceil((targetRupees / effectiveRate) * 100) / 100;
     setQuantity(newQty.toString());
   };
 
