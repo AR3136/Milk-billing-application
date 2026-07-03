@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { DashboardLayoutShell } from '@/components/layout';
 import { Card, Badge, Button, Input } from '@/components/ui';
-import { Milk, ClipboardCheck, History, AlertCircle, Trash2, Loader2, MessageSquare } from 'lucide-react';
+import { Milk, ClipboardCheck, History, AlertCircle, Trash2, Loader2, MessageSquare, CheckCircle2 } from 'lucide-react';
 import { useAppStore, MilkType } from '@/lib/store';
 import { toast } from 'sonner';
 
@@ -20,6 +20,7 @@ export default function MilkEntryPage() {
   const milkEntries = useAppStore((state) => state.milkEntries);
   const addMilkEntry = useAppStore((state) => state.addMilkEntry);
   const deleteMilkEntry = useAppStore((state) => state.deleteMilkEntry);
+  const addPayment = useAppStore((state) => state.addPayment);
 
   const today = new Date().toISOString().split('T')[0];
   const [customerId, setCustomerId] = useState('');
@@ -28,6 +29,7 @@ export default function MilkEntryPage() {
   const [date, setDate] = useState(today);
   const [entryMilkType, setEntryMilkType] = useState<'cow' | 'buffalo'>('cow');
   const [isSaving, setIsSaving] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
 
   // Deletion States
   const [entryToDelete, setEntryToDelete] = useState<string | null>(null);
@@ -95,6 +97,53 @@ export default function MilkEntryPage() {
       setQuantity('');
     } catch (err: any) {
       toast.error(err.message || 'Failed to save entry. Please try again.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handlePaidClick = () => {
+    if (!customerId || !quantity) {
+      toast.error('Please select a customer and enter quantity.');
+      return;
+    }
+    if (!selectedCust) {
+      toast.error('Selected customer not found. Please refresh.');
+      return;
+    }
+    setShowPaymentModal(true);
+  };
+
+  const handleProcessPayment = async (method: 'cash' | 'upi') => {
+    setShowPaymentModal(false);
+    setIsSaving(true);
+    const calculatedAmount = Math.round(Number(quantity) * effectiveRate);
+    try {
+      // 1. Log Milk Entry
+      await addMilkEntry({
+        customerId,
+        customerName: selectedCust!.name,
+        date,
+        shift,
+        quantity: Number(quantity),
+        rate: effectiveRate,
+        milkType: effectiveMilkType,
+        amount: calculatedAmount,
+      });
+
+      // 2. Log Payment
+      await addPayment({
+        customerId,
+        customerName: selectedCust!.name,
+        amount: calculatedAmount,
+        date,
+        method,
+      });
+
+      toast.success(`✓ Logged & Paid ₹${calculatedAmount} via ${method.toUpperCase()} for ${selectedCust!.name}`);
+      setQuantity('');
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to process spot payment. Please try again.');
     } finally {
       setIsSaving(false);
     }
@@ -251,24 +300,33 @@ export default function MilkEntryPage() {
                         disabled={isSaving}
                       />
                     </div>
-                    <div className="flex gap-2 sm:flex-col shrink-0">
+                    <div className="flex flex-wrap gap-2 sm:flex-col shrink-0">
                       <Button
                         type="button"
                         variant="outline"
                         onClick={handleAsYesterday}
                         disabled={isSaving || !customerId}
-                        className="flex-1 sm:flex-none h-[38px] px-3 text-xs border-dashed justify-center"
+                        className="flex-1 min-w-[75px] h-[38px] px-2 text-[11px] border-dashed justify-center"
                       >
-                        <History className="w-3.5 h-3.5 mr-1" /> Copy prev
+                        <History className="w-3.5 h-3.5 mr-1" /> Copy
                       </Button>
                       <Button
                         type="button"
                         variant="outline"
                         onClick={handleNoMilkWhatsApp}
                         disabled={isSaving || !customerId || !selectedCust?.phone}
-                        className="flex-1 sm:flex-none h-[38px] px-3 text-xs border-dashed text-red-600 border-red-200 hover:text-red-700 hover:bg-red-50 dark:border-red-900/50 dark:text-red-400 dark:hover:bg-red-900/20 justify-center"
+                        className="flex-1 min-w-[85px] h-[38px] px-2 text-[11px] border-dashed text-red-600 border-red-200 hover:text-red-700 hover:bg-red-50 dark:border-red-900/50 dark:text-red-400 dark:hover:bg-red-900/20 justify-center"
                       >
-                        <MessageSquare className="w-3.5 h-3.5 mr-1" /> No Milk Msg
+                        <MessageSquare className="w-3.5 h-3.5 mr-1" /> No Milk
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="primary"
+                        onClick={handlePaidClick}
+                        disabled={isSaving || !customerId || !quantity}
+                        className="flex-1 min-w-[75px] h-[38px] px-2 text-[11px] bg-emerald-600 hover:bg-emerald-700 text-white dark:bg-emerald-700 dark:hover:bg-emerald-800 justify-center font-bold"
+                      >
+                        <CheckCircle2 className="w-3.5 h-3.5 mr-1" /> Paid
                       </Button>
                     </div>
                   </div>
@@ -427,6 +485,49 @@ export default function MilkEntryPage() {
                 Yes, Delete
               </Button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Payment Mode Selection Modal Overlay */}
+      {showPaymentModal && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-slate-950/65 backdrop-blur-xs">
+          <div className="w-full max-w-sm bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-2xl space-y-5">
+            <div className="text-center space-y-1">
+              <h3 className="font-extrabold text-slate-850 dark:text-slate-100 text-base">Select Payment Mode</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Process spot payment of <span className="font-black text-emerald-600 dark:text-emerald-450">₹{Math.round(Number(quantity) * effectiveRate)}</span> for {selectedCust?.name}
+              </p>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-3.5">
+              <button
+                onClick={() => handleProcessPayment('upi')}
+                className="flex flex-col items-center justify-center p-4 bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/20 dark:hover:bg-blue-950/45 border border-blue-100 dark:border-blue-900/50 rounded-2xl transition-all cursor-pointer group"
+              >
+                <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-600 flex items-center justify-center font-bold mb-2 group-hover:scale-105 transition-transform">
+                  UPI
+                </div>
+                <span className="text-xs font-bold text-blue-700 dark:text-blue-400">Pay via UPI</span>
+              </button>
+              <button
+                onClick={() => handleProcessPayment('cash')}
+                className="flex flex-col items-center justify-center p-4 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/20 dark:hover:bg-emerald-950/45 border border-emerald-100 dark:border-emerald-900/50 rounded-2xl transition-all cursor-pointer group"
+              >
+                <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center font-bold mb-2 group-hover:scale-105 transition-transform">
+                  💵
+                </div>
+                <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400">Pay via Cash</span>
+              </button>
+            </div>
+
+            <Button 
+              variant="outline" 
+              className="w-full py-2.5 rounded-xl text-xs font-semibold text-slate-500"
+              onClick={() => setShowPaymentModal(false)}
+            >
+              Cancel
+            </Button>
           </div>
         </div>
       )}
