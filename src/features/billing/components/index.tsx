@@ -118,21 +118,21 @@ export const BillInvoiceView: React.FC<BillInvoiceViewProps> = ({ bill, onClose 
   };
 
   return (
-    <Card className="max-w-2xl mx-auto border border-slate-200 shadow-xl bg-white p-8 space-y-6">
+    <Card className="max-w-2xl mx-auto border border-slate-200 dark:border-slate-800 shadow-xl bg-white dark:bg-slate-900 p-8 space-y-6">
       
       {/* Invoice Header */}
-      <div className="flex justify-between items-start border-b border-slate-100 pb-6 flex-wrap gap-4">
+      <div className="flex justify-between items-start border-b border-slate-100 dark:border-slate-800 pb-6 flex-wrap gap-4">
         <div>
           <div className="flex items-center gap-2 mb-2">
             <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-blue-600 to-emerald-500 flex items-center justify-center text-white font-bold">M</div>
-            <span className="font-bold text-slate-800 tracking-tight">{bizName}</span>
+            <span className="font-bold text-slate-800 dark:text-slate-100 tracking-tight">{bizName}</span>
           </div>
           <p className="text-[10px] text-slate-500 dark:text-slate-400">{bizAddress}</p>
         </div>
         <div className="text-right text-xs">
-          <h2 className="text-sm font-bold text-slate-800 uppercase tracking-wide">Invoice Bill</h2>
-          <p className="font-semibold text-slate-500 mt-1">{bill.bill_number}</p>
-          <p className="text-[10px] text-slate-500 mt-0.5">Date: {bill.created_at?.slice(0, 10) || '2026-06-30'}</p>
+          <h2 className="text-sm font-bold text-slate-800 dark:text-slate-100 uppercase tracking-wide">Invoice Bill</h2>
+          <p className="font-semibold text-slate-500 dark:text-slate-400 mt-1">{bill.bill_number}</p>
+          <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">Date: {bill.created_at?.slice(0, 10) || '2026-06-30'}</p>
         </div>
       </div>
 
@@ -140,12 +140,12 @@ export const BillInvoiceView: React.FC<BillInvoiceViewProps> = ({ bill, onClose 
       <div className="grid grid-cols-2 gap-4 text-xs">
         <div>
           <p className="font-bold text-slate-500 dark:text-slate-400 uppercase text-[9px]">Bill To</p>
-          <p className="font-bold text-slate-800 mt-1">{bill.customer_name}</p>
-          <p className="text-slate-500 mt-0.5">Phone: {phone}</p>
+          <p className="font-bold text-slate-800 dark:text-slate-100 mt-1">{bill.customer_name}</p>
+          <p className="text-slate-500 dark:text-slate-400 mt-0.5">Phone: {phone}</p>
         </div>
         <div className="text-right">
           <p className="font-bold text-slate-500 dark:text-slate-400 uppercase text-[9px]">Billing Cycle</p>
-          <p className="font-semibold text-slate-800 mt-1">{bill.from_date} to {bill.to_date}</p>
+          <p className="font-semibold text-slate-800 dark:text-slate-100 mt-1">{bill.from_date} to {bill.to_date}</p>
           <Badge variant={bill.status === 'paid' ? 'secondary' : 'warning'} className="mt-1">
             {bill.status}
           </Badge>
@@ -153,47 +153,47 @@ export const BillInvoiceView: React.FC<BillInvoiceViewProps> = ({ bill, onClose 
       </div>
 
       {/* Deliveries breakdown */}
-      <div className="border-t border-slate-100 pt-6">
+      <div className="border-t border-slate-100 dark:border-slate-800 pt-6">
         <table className="w-full text-left border-collapse text-xs">
           <thead>
-            <tr className="border-b border-slate-200 text-slate-500 dark:text-slate-400 font-bold uppercase text-[9px]">
+            <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-bold uppercase text-[9px]">
               <th className="py-2">Description</th>
               <th className="py-2 text-right">Total Quantity</th>
               <th className="py-2 text-right">Rate</th>
               <th className="py-2 text-right">Total</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-50">
+          <tbody className="divide-y divide-slate-50 dark:divide-slate-800/40">
             {cowQty > 0 && (
               <tr>
-                <td className="py-3 font-semibold text-slate-700">Cow Milk Delivery</td>
-                <td className="py-3 text-right font-medium">{cleanCowQty} L</td>
-                <td className="py-3 text-right">₹{cowRate.toFixed(2)}/L</td>
-                <td className="py-3 text-right font-bold text-slate-800">₹{cowAmt.toFixed(2)}</td>
+                <td className="py-3 font-semibold text-slate-700 dark:text-slate-300">Cow Milk Delivery</td>
+                <td className="py-3 text-right font-medium text-slate-700 dark:text-slate-300">{cleanCowQty} L</td>
+                <td className="py-3 text-right text-slate-600 dark:text-slate-400">₹{cowRate.toFixed(2)}/L</td>
+                <td className="py-3 text-right font-bold text-slate-800 dark:text-slate-100">₹{cowAmt.toFixed(2)}</td>
               </tr>
             )}
             {buffaloQty > 0 && (
               <tr>
-                <td className="py-3 font-semibold text-slate-700">Buffalo Milk Delivery</td>
-                <td className="py-3 text-right font-medium">{cleanBuffaloQty} L</td>
-                <td className="py-3 text-right">₹{buffaloRate.toFixed(2)}/L</td>
-                <td className="py-3 text-right font-bold text-slate-800">₹{buffaloAmt.toFixed(2)}</td>
+                <td className="py-3 font-semibold text-slate-700 dark:text-slate-300">Buffalo Milk Delivery</td>
+                <td className="py-3 text-right font-medium text-slate-700 dark:text-slate-300">{cleanBuffaloQty} L</td>
+                <td className="py-3 text-right text-slate-600 dark:text-slate-400">₹{buffaloRate.toFixed(2)}/L</td>
+                <td className="py-3 text-right font-bold text-slate-800 dark:text-slate-100">₹{buffaloAmt.toFixed(2)}</td>
               </tr>
             )}
             {mixedQty > 0 && (
               <tr>
-                <td className="py-3 font-semibold text-slate-700">Mixed Milk Delivery</td>
-                <td className="py-3 text-right font-medium">{cleanMixedQty} L</td>
-                <td className="py-3 text-right">₹{mixedRate.toFixed(2)}/L</td>
-                <td className="py-3 text-right font-bold text-slate-800">₹{mixedAmt.toFixed(2)}</td>
+                <td className="py-3 font-semibold text-slate-700 dark:text-slate-300">Mixed Milk Delivery</td>
+                <td className="py-3 text-right font-medium text-slate-700 dark:text-slate-300">{cleanMixedQty} L</td>
+                <td className="py-3 text-right text-slate-600 dark:text-slate-400">₹{mixedRate.toFixed(2)}/L</td>
+                <td className="py-3 text-right font-bold text-slate-800 dark:text-slate-100">₹{mixedAmt.toFixed(2)}</td>
               </tr>
             )}
             {cycleEntries.length === 0 && (
               <tr>
-                <td className="py-3 font-semibold text-slate-700">Milk Delivery Collection</td>
-                <td className="py-3 text-right font-medium">{cleanDisplayQty} L</td>
-                <td className="py-3 text-right">₹{avgRate.toFixed(2)}/L</td>
-                <td className="py-3 text-right font-bold text-slate-800">₹{displayAmt.toFixed(2)}</td>
+                <td className="py-3 font-semibold text-slate-700 dark:text-slate-300">Milk Delivery Collection</td>
+                <td className="py-3 text-right font-medium text-slate-700 dark:text-slate-300">{cleanDisplayQty} L</td>
+                <td className="py-3 text-right text-slate-600 dark:text-slate-400">₹{avgRate.toFixed(2)}/L</td>
+                <td className="py-3 text-right font-bold text-slate-800 dark:text-slate-100">₹{displayAmt.toFixed(2)}</td>
               </tr>
             )}
           </tbody>
@@ -201,26 +201,26 @@ export const BillInvoiceView: React.FC<BillInvoiceViewProps> = ({ bill, onClose 
       </div>
 
       {/* Balance dues sheet */}
-      <div className="border-t border-slate-100 pt-6 flex justify-end">
+      <div className="border-t border-slate-100 dark:border-slate-800 pt-6 flex justify-end">
         <div className="w-64 space-y-2 text-xs">
           <div className="flex justify-between">
-            <span className="text-slate-500">Cycle yield amount</span>
-            <span className="font-semibold text-slate-800">₹{displayAmt.toFixed(2)}</span>
+            <span className="text-slate-500 dark:text-slate-400">Cycle yield amount</span>
+            <span className="font-semibold text-slate-800 dark:text-slate-150 font-medium">₹{displayAmt.toFixed(2)}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-slate-500">Balance dues forward</span>
-            <span className="font-semibold text-slate-800">₹{(bill.balance_forward || 0).toFixed(2)}</span>
+            <span className="text-slate-500 dark:text-slate-400">Balance dues forward</span>
+            <span className="font-semibold text-slate-800 dark:text-slate-150 font-medium">₹{(bill.balance_forward || 0).toFixed(2)}</span>
           </div>
           {bill.paid_amount > 0 && (
-            <div className="flex justify-between text-emerald-600 dark:text-emerald-450 font-medium">
+            <div className="flex justify-between text-emerald-600 dark:text-emerald-450 font-bold">
               <span>Paid in Cycle</span>
               <span>-₹{bill.paid_amount.toFixed(2)}</span>
             </div>
           )}
-          <hr className="border-slate-100" />
+          <hr className="border-slate-100 dark:border-slate-800" />
           <div className="flex justify-between text-sm font-extrabold">
-            <span className="text-slate-800">Net Payable dues</span>
-            <span className="text-rose-600">₹{Math.max(0, (bill.balance_forward || 0) + displayAmt - bill.paid_amount).toFixed(2)}</span>
+            <span className="text-slate-800 dark:text-slate-100">Net Payable dues</span>
+            <span className="text-rose-600 dark:text-rose-400">₹{Math.max(0, (bill.balance_forward || 0) + displayAmt - bill.paid_amount).toFixed(2)}</span>
           </div>
         </div>
       </div>
