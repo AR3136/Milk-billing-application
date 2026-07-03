@@ -41,8 +41,9 @@ export default function BillingPage() {
       .reduce((sum, p) => sum + p.amount, 0);
 
     // 3. Compute net balance
-    const balanceForward = Math.max(0, cust.balance - cycleTotalAmount + cyclePayments);
-    const netPayable = cycleTotalAmount + balanceForward;
+    const rawBalanceForward = cust.balance - cycleTotalAmount + cyclePayments;
+    const balanceForward = Math.abs(rawBalanceForward) < 0.01 ? 0 : parseFloat(rawBalanceForward.toFixed(2));
+    const netPayable = Math.round(cycleTotalAmount + balanceForward);
 
     const dynamicBill: Bill = {
       id: cust.id,

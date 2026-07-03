@@ -171,7 +171,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
           shift: e.shift as any,
           quantity: Number(e.quantity),
           rate: Number(e.rate_applied),
-          amount: Number(e.amount),
+          amount: Math.round(Number(e.amount)),
           milkType: (e.milk_type ?? cust?.milkType ?? 'cow') as MilkType,
         };
       });
@@ -221,7 +221,9 @@ export const useAppStore = create<AppStore>((set, get) => ({
         const totalPaid = paymentsList
           .filter(p => p.customerId === c.id)
           .reduce((sum, p) => sum + p.amount, 0);
-        return { ...c, balance: Math.max(0, totalMilk - totalPaid) };
+        const rawBalance = totalMilk - totalPaid;
+        const cleanBalance = Math.abs(rawBalance) < 0.01 ? 0 : parseFloat(rawBalance.toFixed(2));
+        return { ...c, balance: Math.max(0, cleanBalance) };
       });
 
       set({
@@ -299,7 +301,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
     if (error) throw new Error(error.message);
 
-    const amount = Number(inserted.amount ?? calculatedAmount);
+    const amount = Math.round(Number(inserted.amount ?? calculatedAmount));
     const newEntry: MilkEntry = {
       id: inserted.id,
       customerId: inserted.customer_id,
@@ -355,11 +357,14 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
     set((state) => ({
       payments: [newPayment, ...state.payments],
-      customers: state.customers.map(cust =>
-        cust.id === p.customerId
-          ? { ...cust, balance: Math.max(0, cust.balance - p.amount) }
-          : cust
-      ),
+      customers: state.customers.map(cust => {
+        if (cust.id === p.customerId) {
+          const raw = cust.balance - p.amount;
+          const clean = Math.abs(raw) < 0.01 ? 0 : parseFloat(raw.toFixed(2));
+          return { ...cust, balance: Math.max(0, clean) };
+        }
+        return cust;
+      }),
     }));
   },
 
