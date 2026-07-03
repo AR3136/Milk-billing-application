@@ -41,35 +41,41 @@ export const BillInvoiceView: React.FC<BillInvoiceViewProps> = ({ bill, onClose 
 
   const cowQty = cowEntries.reduce((sum, e) => sum + e.quantity, 0);
   const cowAmt = cowEntries.reduce((sum, e) => sum + e.amount, 0);
-  const cowRate = cowQty > 0 ? (cowAmt / cowQty) : 0;
+  const cowRate = matchedCust ? (matchedCust.milkType === 'both' ? matchedCust.rateCow : matchedCust.rate) : (cowQty > 0 ? (cowAmt / cowQty) : 0);
 
   const buffaloQty = buffaloEntries.reduce((sum, e) => sum + e.quantity, 0);
   const buffaloAmt = buffaloEntries.reduce((sum, e) => sum + e.amount, 0);
-  const buffaloRate = buffaloQty > 0 ? (buffaloAmt / buffaloQty) : 0;
+  const buffaloRate = matchedCust ? (matchedCust.milkType === 'both' ? matchedCust.rateBuffalo : matchedCust.rate) : (buffaloQty > 0 ? (buffaloAmt / buffaloQty) : 0);
 
   const mixedQty = mixedEntries.reduce((sum, e) => sum + e.quantity, 0);
   const mixedAmt = mixedEntries.reduce((sum, e) => sum + e.amount, 0);
-  const mixedRate = mixedQty > 0 ? (mixedAmt / mixedQty) : 0;
+  const mixedRate = matchedCust?.rate || (mixedQty > 0 ? (mixedAmt / mixedQty) : 0);
 
   // Use computed cycle values, with fallback to bill defaults if entries are not yet synced/empty
   const displayQty = cycleEntries.length > 0 ? cycleEntries.reduce((sum, e) => sum + e.quantity, 0) : bill.total_quantity;
   const displayAmt = cycleEntries.length > 0 ? cycleEntries.reduce((sum, e) => sum + e.amount, 0) : bill.total_amount;
-  const avgRate = displayQty > 0 ? (displayAmt / displayQty) : 0;
+  const avgRate = matchedCust?.rate || (displayQty > 0 ? (displayAmt / displayQty) : 0);
+
+  // Clean quantities to avoid floating point issues (e.g. 0.8500000000000001 L)
+  const cleanCowQty = parseFloat(cowQty.toFixed(2));
+  const cleanBuffaloQty = parseFloat(buffaloQty.toFixed(2));
+  const cleanMixedQty = parseFloat(mixedQty.toFixed(2));
+  const cleanDisplayQty = parseFloat(displayQty.toFixed(2));
 
   const buildTextInvoice = () => {
     let breakdownText = '';
     if (cowQty > 0) {
-      breakdownText += `Cow Milk: ${cowQty} L X ₹${cowRate.toFixed(2)}/L = ₹${cowAmt.toFixed(2)}\n`;
+      breakdownText += `Cow Milk: ${cleanCowQty} L X ₹${cowRate.toFixed(2)}/L = ₹${cowAmt.toFixed(2)}\n`;
     }
     if (buffaloQty > 0) {
-      breakdownText += `Buffalo Milk: ${buffaloQty} L X ₹${buffaloRate.toFixed(2)}/L = ₹${buffaloAmt.toFixed(2)}\n`;
+      breakdownText += `Buffalo Milk: ${cleanBuffaloQty} L X ₹${buffaloRate.toFixed(2)}/L = ₹${buffaloAmt.toFixed(2)}\n`;
     }
     if (mixedQty > 0) {
-      breakdownText += `Mixed Milk: ${mixedQty} L X ₹${mixedRate.toFixed(2)}/L = ₹${mixedAmt.toFixed(2)}\n`;
+      breakdownText += `Mixed Milk: ${cleanMixedQty} L X ₹${mixedRate.toFixed(2)}/L = ₹${mixedAmt.toFixed(2)}\n`;
     }
 
     if (!breakdownText) {
-      breakdownText = `Milk Qty: ${displayQty} L\nAvg Rate: ₹${avgRate.toFixed(2)}/L\n`;
+      breakdownText = `Milk Qty: ${cleanDisplayQty} L\nAvg Rate: ₹${avgRate.toFixed(2)}/L\n`;
     }
 
     return `${bizGreeting} ${bill.customer_name},\n\n` +
@@ -155,7 +161,7 @@ export const BillInvoiceView: React.FC<BillInvoiceViewProps> = ({ bill, onClose 
             {cowQty > 0 && (
               <tr>
                 <td className="py-3 font-semibold text-slate-700">Cow Milk Delivery</td>
-                <td className="py-3 text-right font-medium">{cowQty} L</td>
+                <td className="py-3 text-right font-medium">{cleanCowQty} L</td>
                 <td className="py-3 text-right">₹{cowRate.toFixed(2)}/L</td>
                 <td className="py-3 text-right font-bold text-slate-800">₹{cowAmt.toFixed(2)}</td>
               </tr>
@@ -163,7 +169,7 @@ export const BillInvoiceView: React.FC<BillInvoiceViewProps> = ({ bill, onClose 
             {buffaloQty > 0 && (
               <tr>
                 <td className="py-3 font-semibold text-slate-700">Buffalo Milk Delivery</td>
-                <td className="py-3 text-right font-medium">{buffaloQty} L</td>
+                <td className="py-3 text-right font-medium">{cleanBuffaloQty} L</td>
                 <td className="py-3 text-right">₹{buffaloRate.toFixed(2)}/L</td>
                 <td className="py-3 text-right font-bold text-slate-800">₹{buffaloAmt.toFixed(2)}</td>
               </tr>
@@ -171,7 +177,7 @@ export const BillInvoiceView: React.FC<BillInvoiceViewProps> = ({ bill, onClose 
             {mixedQty > 0 && (
               <tr>
                 <td className="py-3 font-semibold text-slate-700">Mixed Milk Delivery</td>
-                <td className="py-3 text-right font-medium">{mixedQty} L</td>
+                <td className="py-3 text-right font-medium">{cleanMixedQty} L</td>
                 <td className="py-3 text-right">₹{mixedRate.toFixed(2)}/L</td>
                 <td className="py-3 text-right font-bold text-slate-800">₹{mixedAmt.toFixed(2)}</td>
               </tr>
@@ -179,7 +185,7 @@ export const BillInvoiceView: React.FC<BillInvoiceViewProps> = ({ bill, onClose 
             {cycleEntries.length === 0 && (
               <tr>
                 <td className="py-3 font-semibold text-slate-700">Milk Delivery Collection</td>
-                <td className="py-3 text-right font-medium">{displayQty} L</td>
+                <td className="py-3 text-right font-medium">{cleanDisplayQty} L</td>
                 <td className="py-3 text-right">₹{avgRate.toFixed(2)}/L</td>
                 <td className="py-3 text-right font-bold text-slate-800">₹{displayAmt.toFixed(2)}</td>
               </tr>
