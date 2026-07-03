@@ -107,60 +107,44 @@ export default function BillingPage() {
 
         {/* Invoice Grid */}
         <Card title="Active Billing Invoices" subtitle="Invoice cycles and current outstanding balances">
-          <div className="relative">
-            {/* Mobile swipe helper indicator */}
-            <div className="block md:hidden text-center text-[10px] text-blue-500/80 dark:text-blue-400/80 mb-2 font-semibold animate-pulse">
-              ← Swipe left/right to view table details →
-            </div>
-            <div className="overflow-x-auto w-full border border-slate-100 dark:border-slate-800 rounded-2xl">
-              <table className="w-full text-left border-collapse text-xs min-w-[600px]">
-                <thead>
-                  <tr className="border-b border-slate-100 dark:border-slate-800 text-slate-500 dark:text-slate-400 uppercase font-semibold">
-                    <th className="py-3 px-4">Invoice No</th>
-                    <th className="py-3 px-4">Client Name</th>
-                    <th className="py-3 px-4">Billing Range</th>
-                    <th className="py-3 px-4">Status</th>
-                    <th className="py-3 px-4 text-right">Dues Amount</th>
-                    <th className="py-3 px-4 text-center">Actions</th>
-                  </tr>
-                </thead>
+          <div className="overflow-x-auto w-full border border-slate-100 dark:border-slate-800 rounded-2xl">
+            <table className="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr className="border-b border-slate-100 dark:border-slate-800 text-slate-500 dark:text-slate-400 uppercase font-semibold">
+                  <th className="py-3.5 px-5">Client Name</th>
+                  <th className="py-3.5 px-5">Status</th>
+                  <th className="py-3.5 px-5 text-right">Dues Amount</th>
+                </tr>
+              </thead>
               <tbody className="divide-y divide-slate-50 dark:divide-slate-800/50">
                 {customers.map((cust, idx) => (
-                  <tr key={cust.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/30 transition-colors">
-                    <td className="py-3.5 px-4 font-semibold text-slate-500">#INV-2026-00{idx+1}</td>
-                    <td className="py-3.5 px-4 font-bold text-slate-800 dark:text-slate-200">{cust.name}</td>
-                    <td className="py-3.5 px-4 text-slate-500">{getFormattedRange()}</td>
-                    <td className="py-3.5 px-4">
+                  <tr 
+                    key={cust.id} 
+                    onClick={() => handleAction(cust, idx)}
+                    className="hover:bg-slate-50/70 dark:hover:bg-slate-900/40 transition-colors cursor-pointer"
+                  >
+                    <td className="py-4 px-5 font-bold text-slate-850 dark:text-slate-200">
+                      {cust.name}
+                    </td>
+                    <td className="py-4 px-5">
                       {cust.balance > 0 ? (
-                        <span className="inline-flex items-center gap-1 text-rose-600 font-medium bg-rose-50 dark:bg-rose-950/20 px-2 py-0.5 rounded-md">
+                        <span className="inline-flex items-center gap-1 text-rose-600 font-medium bg-rose-50 dark:bg-rose-950/20 px-2 py-0.5 rounded-md text-[10px]">
                           Pending
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 text-emerald-600 font-medium bg-emerald-50 dark:bg-emerald-950/20 px-2 py-0.5 rounded-md">
+                        <span className="inline-flex items-center gap-1 text-emerald-600 font-medium bg-emerald-50 dark:bg-emerald-950/20 px-2 py-0.5 rounded-md text-[10px]">
                           Settled
                         </span>
                       )}
                     </td>
-                    <td className="py-3.5 px-4 text-right font-bold">₹{cust.balance.toFixed(2)}</td>
-                    <td className="py-3.5 px-4">
-                      <div className="flex justify-center items-center gap-2">
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          onClick={() => handleAction(cust, idx)}
-                          className="px-3 py-1 flex items-center gap-1 rounded-xl text-blue-600 border-blue-100 hover:bg-blue-50"
-                          title="View Invoice"
-                        >
-                          <Eye className="w-3.5 h-3.5" /> View Invoice
-                        </Button>
-                      </div>
+                    <td className="py-4 px-5 text-right font-black text-slate-800 dark:text-slate-100">
+                      ₹{cust.balance.toFixed(2)}
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-         </div>
         </Card>
 
         {/* Invoice Modal Overlay */}
