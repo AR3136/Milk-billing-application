@@ -151,7 +151,7 @@ export default function CustomersPage() {
                         className="px-3.5 py-1.5 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold tracking-wide"
                         onClick={(e) => {
                           e.stopPropagation();
-                          router.push(`/customers/${cust.id}`);
+                          router.push(`/customers/profile?id=${cust.id}`);
                         }}
                       >
                         Report

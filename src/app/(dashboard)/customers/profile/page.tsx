@@ -1,23 +1,17 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { DashboardLayoutShell } from '@/components/layout';
 import { Card, Badge, Button } from '@/components/ui';
 import { useAppStore } from '@/lib/store';
 import { ArrowLeft, Calendar, FileText, Milk, Phone, MapPin, User, ArrowUpRight, Trash2, AlertCircle, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
-export default function CustomerDetailPage({
-  params,
-}: {
-  params: { id: string };
-}) {
+function CustomerDetailContent() {
   const router = useRouter();
-  
-  // Resolve params using React.use() to satisfy Next.js 16 requirements if params is a Promise
-  const unwrappedParams = React.use(params as any) as any;
-  const id = unwrappedParams.id;
+  const searchParams = useSearchParams();
+  const id = searchParams.get('id');
 
   const customers = useAppStore((state) => state.customers);
   const milkEntries = useAppStore((state) => state.milkEntries);
@@ -90,7 +84,7 @@ export default function CustomerDetailPage({
   const handleDelete = async () => {
     setIsDeleting(true);
     try {
-      await deleteCustomer(id);
+      await deleteCustomer(id!);
       toast.success(`✓ Customer "${customer.name}" deleted successfully.`);
       router.push('/customers');
     } catch (err: any) {
@@ -320,5 +314,13 @@ export default function CustomerDetailPage({
         </div>
       )}
     </DashboardLayoutShell>
+  );
+}
+
+export default function CustomerDetailPage() {
+  return (
+    <Suspense fallback={<div className="text-center py-12 text-slate-500">Loading profile...</div>}>
+      <CustomerDetailContent />
+    </Suspense>
   );
 }

@@ -1,17 +1,22 @@
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
-  // 1. Enable compression
+  // 1. Enable static export for Capacitor deployment
+  output: 'export',
+
+  // 2. Disable server-side image optimization for static export
+  images: {
+    unoptimized: true,
+  },
+
+  // 3. Ensure trailing slashes are added for Capacitor routing compatibility
+  trailingSlash: true,
+
+  // 4. Enable compression (ignored in static builds but kept for reference)
   compress: true,
 
-  // 2. React strict mode for better performance & bug finding
+  // 5. React strict mode
   reactStrictMode: true,
-
-  // 3. Image optimization cache parameters
-  images: {
-    minimumCacheTTL: 60,
-    formats: ['image/webp'],
-  },
 };
 
 export default nextConfig;
