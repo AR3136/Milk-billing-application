@@ -28,6 +28,7 @@ export default function MilkEntryPage() {
   const [shift, setShift] = useState<'morning' | 'evening'>('morning');
   const [date, setDate] = useState(today);
   const [entryMilkType, setEntryMilkType] = useState<'cow' | 'buffalo'>('cow');
+  const [entryMode, setEntryMode] = useState<'liters' | 'rupees'>('liters');
   const [isSaving, setIsSaving] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentAmount, setPaymentAmount] = useState<number>(0);
@@ -64,8 +65,16 @@ export default function MilkEntryPage() {
     if (!customerId) return;
     const prev = milkEntries.find(e => e.customerId === customerId && e.milkType === effectiveMilkType);
     if (prev) {
-      setQuantity(prev.quantity.toString());
-      toast.success(`Copied ${prev.quantity} L of ${effectiveMilkType} from previous entry`);
+      if (prev.rate === 0) {
+        // Previous entry was amount-based
+        setEntryMode('rupees');
+        setQuantity(prev.amount.toString());
+        toast.success(`Copied ₹${prev.amount} (direct amount) from previous ${effectiveMilkType} entry`);
+      } else {
+        setEntryMode('liters');
+        setQuantity(prev.quantity.toString());
+        toast.success(`Copied ${prev.quantity} L of ${effectiveMilkType} from previous entry`);
+      }
     } else {
       toast.error(`No previous ${effectiveMilkType} entry found for this customer`);
     }
@@ -82,6 +91,11 @@ export default function MilkEntryPage() {
       return;
     }
 
+    const isRupeeMode = entryMode === 'rupees';
+    const entryAmount = isRupeeMode ? Number(quantity) : Math.round(Number(quantity) * effectiveRate);
+    const entryQty = isRupeeMode ? 0 : Number(quantity);
+    const entryRate = isRupeeMode ? 0 : effectiveRate;
+
     setIsSaving(true);
     try {
       await addMilkEntry({
@@ -89,12 +103,16 @@ export default function MilkEntryPage() {
         customerName: selectedCust.name,
         date,
         shift,
-        quantity: Number(quantity),
-        rate: effectiveRate,
+        quantity: entryQty,
+        rate: entryRate,
         milkType: effectiveMilkType,
-        amount: Math.round(Number(quantity) * effectiveRate),
+        amount: entryAmount,
       });
-      toast.success(`✓ Logged ${quantity} L for ${selectedCust.name} (${effectiveMilkType})`);
+      if (isRupeeMode) {
+        toast.success(`✓ Logged ₹${entryAmount} for ${selectedCust.name} (${effectiveMilkType})`);
+      } else {
+        toast.success(`✓ Logged ${quantity} L for ${selectedCust.name} (${effectiveMilkType})`);
+      }
       setQuantity('');
     } catch (err: any) {
       toast.error(err.message || 'Failed to save entry. Please try again.');
@@ -112,7 +130,9 @@ export default function MilkEntryPage() {
       toast.error('Selected customer not found. Please refresh.');
       return;
     }
-    const calculatedAmount = Math.round(Number(quantity) * effectiveRate);
+    const calculatedAmount = entryMode === 'rupees'
+      ? Number(quantity)
+      : Math.round(Number(quantity) * effectiveRate);
     setPaymentAmount(calculatedAmount);
     setShowPaymentModal(true);
   };
@@ -120,7 +140,10 @@ export default function MilkEntryPage() {
   const handleProcessPayment = async (method: 'cash' | 'upi') => {
     setShowPaymentModal(false);
     setIsSaving(true);
-    const calculatedAmount = Math.round(Number(quantity) * effectiveRate);
+    const isRupeeMode = entryMode === 'rupees';
+    const calculatedAmount = isRupeeMode ? Number(quantity) : Math.round(Number(quantity) * effectiveRate);
+    const entryQty = isRupeeMode ? 0 : Number(quantity);
+    const entryRate = isRupeeMode ? 0 : effectiveRate;
     try {
       // 1. Log Milk Entry
       await addMilkEntry({
@@ -128,8 +151,8 @@ export default function MilkEntryPage() {
         customerName: selectedCust!.name,
         date,
         shift,
-        quantity: Number(quantity),
-        rate: effectiveRate,
+        quantity: entryQty,
+        rate: entryRate,
         milkType: effectiveMilkType,
         amount: calculatedAmount,
       });
@@ -287,16 +310,45 @@ export default function MilkEntryPage() {
                   <Input label="Date" type="date" value={date} onChange={e => setDate(e.target.value)} disabled={isSaving} />
                 </div>
 
-                {/* Quantity */}
+                {/* Quantity / Amount with mode toggle */}
                 <div className="space-y-3">
+                  {/* Mode Toggle */}
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Entry in:</span>
+                    <div className="flex rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+                      <button
+                        type="button"
+                        onClick={() => { setEntryMode('liters'); setQuantity(''); }}
+                        className={`px-3 py-1.5 text-[11px] font-bold transition-all ${
+                          entryMode === 'liters'
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700'
+                        }`}
+                      >
+                        Liters (L)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => { setEntryMode('rupees'); setQuantity(''); }}
+                        className={`px-3 py-1.5 text-[11px] font-bold transition-all ${
+                          entryMode === 'rupees'
+                            ? 'bg-emerald-600 text-white'
+                            : 'bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700'
+                        }`}
+                      >
+                        Rupees (₹)
+                      </button>
+                    </div>
+                  </div>
+
                   <div className="flex flex-col sm:flex-row gap-3 sm:items-end">
                     <div className="flex-1">
                       <Input
-                        label="Quantity (Liters)"
+                        label={entryMode === 'liters' ? 'Quantity (Liters)' : 'Amount (₹ Rupees)'}
                         type="number"
-                        step="0.01"
+                        step={entryMode === 'liters' ? '0.01' : '1'}
                         min="0"
-                        placeholder="e.g. 10.5"
+                        placeholder={entryMode === 'liters' ? 'e.g. 10.5' : 'e.g. 150'}
                         value={quantity}
                         onChange={e => setQuantity(e.target.value)}
                         required
@@ -335,47 +387,84 @@ export default function MilkEntryPage() {
                   </div>
 
                   {/* Quick Add Buttons */}
-                  <div className="grid grid-cols-2 gap-4 bg-slate-50 dark:bg-slate-800/50 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800">
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Quick Add (Liters)</label>
-                      <div className="flex flex-wrap gap-1.5">
-                        {[0.25, 0.5, 0.75, 1].map(val => (
-                          <button
-                            key={`L-${val}`}
-                            type="button"
-                            onClick={() => handleQuickAddLiters(val)}
-                            className="px-2 py-1.5 bg-white border border-blue-100 text-blue-700 hover:bg-blue-50 hover:border-blue-200 dark:bg-slate-900 dark:border-blue-900/50 dark:text-blue-400 dark:hover:bg-blue-900/30 text-[11px] font-bold rounded-lg shadow-sm transition-all"
-                          >
-                            +{val}L
-                          </button>
-                        ))}
+                  {entryMode === 'liters' ? (
+                    <div className="grid grid-cols-2 gap-4 bg-slate-50 dark:bg-slate-800/50 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800">
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Quick Add (Liters)</label>
+                        <div className="flex flex-wrap gap-1.5">
+                          {[0.25, 0.5, 0.75, 1].map(val => (
+                            <button
+                              key={`L-${val}`}
+                              type="button"
+                              onClick={() => handleQuickAddLiters(val)}
+                              className="px-2 py-1.5 bg-white border border-blue-100 text-blue-700 hover:bg-blue-50 hover:border-blue-200 dark:bg-slate-900 dark:border-blue-900/50 dark:text-blue-400 dark:hover:bg-blue-900/30 text-[11px] font-bold rounded-lg shadow-sm transition-all"
+                            >
+                              +{val}L
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Quick Add (₹ Equiv)</label>
+                        <div className="flex flex-wrap gap-1.5">
+                          {[2, 3, 5, 10].map(val => (
+                            <button
+                              key={`Rs-${val}`}
+                              type="button"
+                              onClick={() => handleQuickAddRupees(val)}
+                              className="px-2 py-1.5 bg-white border border-emerald-100 text-emerald-700 hover:bg-emerald-50 hover:border-emerald-200 dark:bg-slate-900 dark:border-emerald-900/50 dark:text-emerald-400 dark:hover:bg-emerald-900/30 text-[11px] font-bold rounded-lg shadow-sm transition-all"
+                            >
+                              +₹{val}
+                            </button>
+                          ))}
+                        </div>
                       </div>
                     </div>
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Quick Add (Rupees)</label>
-                      <div className="flex flex-wrap gap-1.5">
-                        {[2, 3, 5, 10].map(val => (
-                          <button
-                            key={`Rs-${val}`}
-                            type="button"
-                            onClick={() => handleQuickAddRupees(val)}
-                            className="px-2 py-1.5 bg-white border border-emerald-100 text-emerald-700 hover:bg-emerald-50 hover:border-emerald-200 dark:bg-slate-900 dark:border-emerald-900/50 dark:text-emerald-400 dark:hover:bg-emerald-900/30 text-[11px] font-bold rounded-lg shadow-sm transition-all"
-                          >
-                            +₹{val}
-                          </button>
-                        ))}
+                  ) : (
+                    <div className="bg-emerald-50 dark:bg-emerald-950/20 p-2.5 rounded-xl border border-emerald-100 dark:border-emerald-900/40">
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider">Quick Add (₹ Rupees)</label>
+                        <div className="flex flex-wrap gap-1.5">
+                          {[10, 20, 50, 100].map(val => (
+                            <button
+                              key={`Rs-${val}`}
+                              type="button"
+                              onClick={() => {
+                                const current = Number(quantity) || 0;
+                                setQuantity((current + val).toString());
+                              }}
+                              className="px-2 py-1.5 bg-white border border-emerald-200 text-emerald-700 hover:bg-emerald-50 dark:bg-slate-900 dark:border-emerald-900/50 dark:text-emerald-400 dark:hover:bg-emerald-900/30 text-[11px] font-bold rounded-lg shadow-sm transition-all"
+                            >
+                              +₹{val}
+                            </button>
+                          ))}
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  )}
                 </div>
 
                 {/* Live Amount Preview */}
-                {customerId && quantity && effectiveRate > 0 && (
-                  <div className="text-xs text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-800 rounded-lg px-3 py-2">
-                    Rate: <span className="font-semibold">₹{effectiveRate}/L</span>
-                    {' · '}Total: <span className="font-bold text-slate-800 dark:text-slate-100">
-                      ₹{Math.round(Number(quantity) * effectiveRate)}
-                    </span>
+                {customerId && quantity && (
+                  <div className={`text-xs text-slate-500 dark:text-slate-400 rounded-lg px-3 py-2 ${
+                    entryMode === 'rupees'
+                      ? 'bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/40'
+                      : 'bg-slate-50 dark:bg-slate-800'
+                  }`}>
+                    {entryMode === 'rupees' ? (
+                      <>
+                        Mode: <span className="font-semibold text-emerald-700 dark:text-emerald-400">Direct Amount</span>
+                        {' · '}Will log: <span className="font-bold text-slate-800 dark:text-slate-100">₹{Number(quantity)}</span>
+                        <span className="ml-1 text-[10px] text-emerald-600">(no qty×rate calculation)</span>
+                      </>
+                    ) : effectiveRate > 0 ? (
+                      <>
+                        Rate: <span className="font-semibold">₹{effectiveRate}/L</span>
+                        {' · '}Total: <span className="font-bold text-slate-800 dark:text-slate-100">
+                          ₹{Math.round(Number(quantity) * effectiveRate)}
+                        </span>
+                      </>
+                    ) : null}
                   </div>
                 )}
 
@@ -426,8 +515,8 @@ export default function MilkEntryPage() {
                             {entry.shift}
                           </Badge>
                         </td>
-                        <td className="py-3 px-3 font-medium">{entry.quantity} L</td>
-                        <td className="py-3 px-3 text-slate-500 dark:text-slate-400">₹{entry.rate}/L</td>
+                        <td className="py-3 px-3 font-medium">{entry.rate === 0 ? <span className="text-emerald-600 text-[10px] font-bold">Direct ₹</span> : `${entry.quantity} L`}</td>
+                        <td className="py-3 px-3 text-slate-500 dark:text-slate-400">{entry.rate === 0 ? <span className="text-[10px] text-emerald-600">fixed amt</span> : `₹${entry.rate}/L`}</td>
                         <td className="py-3 px-3 text-right font-bold text-slate-800 dark:text-slate-100">₹{entry.amount.toFixed(2)}</td>
                         <td className="py-3 px-3 text-center">
                           <button
@@ -514,8 +603,8 @@ export default function MilkEntryPage() {
               </button>
               <div className="text-center min-w-[100px]">
                 <span className="text-2xl font-black text-slate-800 dark:text-slate-100">₹{paymentAmount}</span>
-                <p className="text-[10px] text-slate-400 dark:text-slate-550 mt-0.5">
-                  Milk cost: ₹{Math.round(Number(quantity) * effectiveRate)}
+                <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">
+                  Milk cost: ₹{entryMode === 'rupees' ? Number(quantity) : Math.round(Number(quantity) * effectiveRate)}
                 </p>
               </div>
               <button 

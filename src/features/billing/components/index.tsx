@@ -39,17 +39,31 @@ export const BillInvoiceView: React.FC<BillInvoiceViewProps> = ({ bill, onClose 
   const buffaloEntries = cycleEntries.filter(e => e.milkType === 'buffalo');
   const mixedEntries = cycleEntries.filter(e => e.milkType !== 'cow' && e.milkType !== 'buffalo');
 
-  const cowQty = cowEntries.reduce((sum, e) => sum + e.quantity, 0);
+  // Separate liter-based vs direct-amount entries (rate=0 means amount-based)
+  const cowLiterEntries = cowEntries.filter(e => e.rate > 0);
+  const cowAmtEntries = cowEntries.filter(e => e.rate === 0);
+  const buffaloLiterEntries = buffaloEntries.filter(e => e.rate > 0);
+  const buffaloAmtEntries = buffaloEntries.filter(e => e.rate === 0);
+  const mixedLiterEntries = mixedEntries.filter(e => e.rate > 0);
+  const mixedAmtEntries = mixedEntries.filter(e => e.rate === 0);
+
+  const cowQty = cowLiterEntries.reduce((sum, e) => sum + e.quantity, 0);
   const cowRate = matchedCust ? (matchedCust.milkType === 'both' ? matchedCust.rateCow : matchedCust.rate) : 0;
-  const cowAmt = Math.ceil(cowQty * cowRate);
+  const cowLiterAmt = Math.ceil(cowQty * cowRate);
+  const cowDirectAmt = cowAmtEntries.reduce((sum, e) => sum + e.amount, 0);
+  const cowAmt = cowLiterAmt + cowDirectAmt;
 
-  const buffaloQty = buffaloEntries.reduce((sum, e) => sum + e.quantity, 0);
+  const buffaloQty = buffaloLiterEntries.reduce((sum, e) => sum + e.quantity, 0);
   const buffaloRate = matchedCust ? (matchedCust.milkType === 'both' ? matchedCust.rateBuffalo : matchedCust.rate) : 0;
-  const buffaloAmt = Math.ceil(buffaloQty * buffaloRate);
+  const buffaloLiterAmt = Math.ceil(buffaloQty * buffaloRate);
+  const buffaloDirectAmt = buffaloAmtEntries.reduce((sum, e) => sum + e.amount, 0);
+  const buffaloAmt = buffaloLiterAmt + buffaloDirectAmt;
 
-  const mixedQty = mixedEntries.reduce((sum, e) => sum + e.quantity, 0);
+  const mixedQty = mixedLiterEntries.reduce((sum, e) => sum + e.quantity, 0);
   const mixedRate = matchedCust?.rate || 0;
-  const mixedAmt = Math.ceil(mixedQty * mixedRate);
+  const mixedLiterAmt = Math.ceil(mixedQty * mixedRate);
+  const mixedDirectAmt = mixedAmtEntries.reduce((sum, e) => sum + e.amount, 0);
+  const mixedAmt = mixedLiterAmt + mixedDirectAmt;
 
   // Use computed cycle values, with fallback to bill defaults if entries are not yet synced/empty
   const displayQty = cycleEntries.length > 0 ? cycleEntries.reduce((sum, e) => sum + e.quantity, 0) : bill.total_quantity;
@@ -66,20 +80,41 @@ export const BillInvoiceView: React.FC<BillInvoiceViewProps> = ({ bill, onClose 
     const isMarathi = matchedCust?.messageLanguage === 'marathi';
     
     let breakdownText = '';
-    if (cowQty > 0) {
+
+    // Cow milk breakdown
+    if (cowQty > 0 && cowLiterAmt > 0) {
       breakdownText += isMarathi
-        ? `गाईचे दूध: ${cleanCowQty} L X ₹${cowRate.toFixed(2)}/L = ₹${cowAmt.toFixed(2)}\n`
-        : `Cow Milk: ${cleanCowQty} L X ₹${cowRate.toFixed(2)}/L = ₹${cowAmt.toFixed(2)}\n`;
+        ? `गाईचे दूध (L): ${cleanCowQty} L X ₹${cowRate.toFixed(2)}/L = ₹${cowLiterAmt.toFixed(2)}\n`
+        : `Cow Milk (L): ${cleanCowQty} L X ₹${cowRate.toFixed(2)}/L = ₹${cowLiterAmt.toFixed(2)}\n`;
     }
-    if (buffaloQty > 0) {
+    if (cowDirectAmt > 0) {
       breakdownText += isMarathi
-        ? `म्हशीचे दूध: ${cleanBuffaloQty} L X ₹${buffaloRate.toFixed(2)}/L = ₹${buffaloAmt.toFixed(2)}\n`
-        : `Buffalo Milk: ${cleanBuffaloQty} L X ₹${buffaloRate.toFixed(2)}/L = ₹${buffaloAmt.toFixed(2)}\n`;
+        ? `गाईचे दूध (₹): ₹${cowDirectAmt.toFixed(2)}\n`
+        : `Cow Milk (₹): ₹${cowDirectAmt.toFixed(2)}\n`;
     }
-    if (mixedQty > 0) {
+
+    // Buffalo milk breakdown
+    if (buffaloQty > 0 && buffaloLiterAmt > 0) {
       breakdownText += isMarathi
-        ? `मिश्र दूध: ${cleanMixedQty} L X ₹${mixedRate.toFixed(2)}/L = ₹${mixedAmt.toFixed(2)}\n`
-        : `Mixed Milk: ${cleanMixedQty} L X ₹${mixedRate.toFixed(2)}/L = ₹${mixedAmt.toFixed(2)}\n`;
+        ? `म्हशीचे दूध (L): ${cleanBuffaloQty} L X ₹${buffaloRate.toFixed(2)}/L = ₹${buffaloLiterAmt.toFixed(2)}\n`
+        : `Buffalo Milk (L): ${cleanBuffaloQty} L X ₹${buffaloRate.toFixed(2)}/L = ₹${buffaloLiterAmt.toFixed(2)}\n`;
+    }
+    if (buffaloDirectAmt > 0) {
+      breakdownText += isMarathi
+        ? `म्हशीचे दूध (₹): ₹${buffaloDirectAmt.toFixed(2)}\n`
+        : `Buffalo Milk (₹): ₹${buffaloDirectAmt.toFixed(2)}\n`;
+    }
+
+    // Mixed milk breakdown
+    if (mixedQty > 0 && mixedLiterAmt > 0) {
+      breakdownText += isMarathi
+        ? `मिश्र दूध (L): ${cleanMixedQty} L X ₹${mixedRate.toFixed(2)}/L = ₹${mixedLiterAmt.toFixed(2)}\n`
+        : `Mixed Milk (L): ${cleanMixedQty} L X ₹${mixedRate.toFixed(2)}/L = ₹${mixedLiterAmt.toFixed(2)}\n`;
+    }
+    if (mixedDirectAmt > 0) {
+      breakdownText += isMarathi
+        ? `मिश्र दूध (₹): ₹${mixedDirectAmt.toFixed(2)}\n`
+        : `Mixed Milk (₹): ₹${mixedDirectAmt.toFixed(2)}\n`;
     }
 
     if (!breakdownText) {
@@ -225,28 +260,55 @@ export const BillInvoiceView: React.FC<BillInvoiceViewProps> = ({ bill, onClose 
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-50 dark:divide-slate-800/40">
+            {/* Cow Milk - Liter-based */}
             {cowQty > 0 && (
               <tr>
-                <td className="py-3 font-semibold text-slate-700 dark:text-slate-300">Cow Milk Delivery</td>
+                <td className="py-3 font-semibold text-slate-700 dark:text-slate-300">Cow Milk Delivery (L)</td>
                 <td className="py-3 text-right font-medium text-slate-700 dark:text-slate-300">{cleanCowQty} L</td>
                 <td className="py-3 text-right text-slate-600 dark:text-slate-400">₹{cowRate.toFixed(2)}/L</td>
-                <td className="py-3 text-right font-bold text-slate-800 dark:text-slate-100">₹{cowAmt.toFixed(2)}</td>
+                <td className="py-3 text-right font-bold text-slate-800 dark:text-slate-100">₹{cowLiterAmt.toFixed(2)}</td>
               </tr>
             )}
+            {/* Cow Milk - Direct amount */}
+            {cowDirectAmt > 0 && (
+              <tr>
+                <td className="py-3 font-semibold text-slate-700 dark:text-slate-300">Cow Milk Delivery (₹)</td>
+                <td className="py-3 text-right font-medium text-emerald-600 dark:text-emerald-400" colSpan={2}>Direct Amount</td>
+                <td className="py-3 text-right font-bold text-slate-800 dark:text-slate-100">₹{cowDirectAmt.toFixed(2)}</td>
+              </tr>
+            )}
+            {/* Buffalo Milk - Liter-based */}
             {buffaloQty > 0 && (
               <tr>
-                <td className="py-3 font-semibold text-slate-700 dark:text-slate-300">Buffalo Milk Delivery</td>
+                <td className="py-3 font-semibold text-slate-700 dark:text-slate-300">Buffalo Milk Delivery (L)</td>
                 <td className="py-3 text-right font-medium text-slate-700 dark:text-slate-300">{cleanBuffaloQty} L</td>
                 <td className="py-3 text-right text-slate-600 dark:text-slate-400">₹{buffaloRate.toFixed(2)}/L</td>
-                <td className="py-3 text-right font-bold text-slate-800 dark:text-slate-100">₹{buffaloAmt.toFixed(2)}</td>
+                <td className="py-3 text-right font-bold text-slate-800 dark:text-slate-100">₹{buffaloLiterAmt.toFixed(2)}</td>
               </tr>
             )}
+            {/* Buffalo Milk - Direct amount */}
+            {buffaloDirectAmt > 0 && (
+              <tr>
+                <td className="py-3 font-semibold text-slate-700 dark:text-slate-300">Buffalo Milk Delivery (₹)</td>
+                <td className="py-3 text-right font-medium text-emerald-600 dark:text-emerald-400" colSpan={2}>Direct Amount</td>
+                <td className="py-3 text-right font-bold text-slate-800 dark:text-slate-100">₹{buffaloDirectAmt.toFixed(2)}</td>
+              </tr>
+            )}
+            {/* Mixed Milk - Liter-based */}
             {mixedQty > 0 && (
               <tr>
-                <td className="py-3 font-semibold text-slate-700 dark:text-slate-300">Mixed Milk Delivery</td>
+                <td className="py-3 font-semibold text-slate-700 dark:text-slate-300">Mixed Milk Delivery (L)</td>
                 <td className="py-3 text-right font-medium text-slate-700 dark:text-slate-300">{cleanMixedQty} L</td>
                 <td className="py-3 text-right text-slate-600 dark:text-slate-400">₹{mixedRate.toFixed(2)}/L</td>
-                <td className="py-3 text-right font-bold text-slate-800 dark:text-slate-100">₹{mixedAmt.toFixed(2)}</td>
+                <td className="py-3 text-right font-bold text-slate-800 dark:text-slate-100">₹{mixedLiterAmt.toFixed(2)}</td>
+              </tr>
+            )}
+            {/* Mixed Milk - Direct amount */}
+            {mixedDirectAmt > 0 && (
+              <tr>
+                <td className="py-3 font-semibold text-slate-700 dark:text-slate-300">Mixed Milk Delivery (₹)</td>
+                <td className="py-3 text-right font-medium text-emerald-600 dark:text-emerald-400" colSpan={2}>Direct Amount</td>
+                <td className="py-3 text-right font-bold text-slate-800 dark:text-slate-100">₹{mixedDirectAmt.toFixed(2)}</td>
               </tr>
             )}
             {cycleEntries.length === 0 && (

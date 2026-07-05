@@ -406,19 +406,19 @@ function CustomerDetailContent() {
       {/* Confirmation Dialog Overlay */}
       {showConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs">
-          <div className="w-full max-w-sm bg-white rounded-2xl border border-slate-200 p-6 shadow-2xl space-y-4">
+          <div className="w-full max-w-sm bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-2xl space-y-4">
             <div className="flex items-center gap-3 text-rose-600">
               <div className="w-10 h-10 bg-rose-50 rounded-xl flex items-center justify-center">
                 <Trash2 className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="font-bold text-slate-800 text-sm">Delete Customer Profile?</h3>
-                <p className="text-[11px] text-slate-500">This action cannot be undone.</p>
+                <h3 className="font-bold text-slate-800 dark:text-slate-100 text-sm">Delete Customer Profile?</h3>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400">This action cannot be undone.</p>
               </div>
             </div>
             
-            <p className="text-xs text-slate-600">
-              Are you sure you want to permanently delete the profile of <span className="font-bold text-slate-800">"{customer.name}"</span>?
+            <p className="text-xs text-slate-600 dark:text-slate-400">
+              Are you sure you want to permanently delete the profile of <span className="font-bold text-slate-800 dark:text-slate-100">"{customer.name}"</span>?
             </p>
 
             <div className="flex gap-2 justify-end pt-2">
@@ -455,7 +455,7 @@ function CustomerDetailContent() {
                 <Edit className="w-4 h-4 text-blue-600" />
               </div>
               <div>
-                <h3 className="font-bold text-slate-800 dark:text-slate-150 text-sm">Edit Member Details</h3>
+                <h3 className="font-bold text-slate-800 dark:text-slate-100 text-sm">Edit Member Details</h3>
                 <p className="text-[10px] text-slate-500 font-semibold uppercase tracking-wide">Update customer details & pricing</p>
               </div>
             </div>
@@ -466,7 +466,7 @@ function CustomerDetailContent() {
                   <label className="text-xs font-semibold text-slate-500">Contact Name</label>
                   <input 
                     type="text" 
-                    className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 dark:text-slate-150"
+                    className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 dark:text-slate-100"
                     placeholder="e.g. Ramesh Kumar"
                     value={editName}
                     onChange={e => setEditName(e.target.value)}
@@ -478,7 +478,7 @@ function CustomerDetailContent() {
                   <label className="text-xs font-semibold text-slate-500">Phone Number</label>
                   <input 
                     type="text" 
-                    className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 dark:text-slate-150"
+                    className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 dark:text-slate-100"
                     placeholder="e.g. +91 98765 43210"
                     value={editPhone}
                     onChange={e => setEditPhone(e.target.value)}
@@ -489,7 +489,7 @@ function CustomerDetailContent() {
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-slate-500">Milk Type</label>
                   <select 
-                    className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 dark:text-slate-150"
+                    className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 dark:text-slate-100"
                     value={editMilkType}
                     onChange={e => setEditMilkType(e.target.value as any)}
                   >
@@ -506,7 +506,7 @@ function CustomerDetailContent() {
                       <label className="text-[11px] font-semibold text-slate-500">Cow Rate (₹/L)</label>
                       <input 
                         type="number" 
-                        className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 dark:text-slate-150"
+                        className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 dark:text-slate-100"
                         value={editRateCow}
                         onChange={e => setEditRateCow(Number(e.target.value))}
                         required
@@ -516,7 +516,7 @@ function CustomerDetailContent() {
                       <label className="text-[11px] font-semibold text-slate-500">Buffalo Rate (₹/L)</label>
                       <input 
                         type="number" 
-                        className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 dark:text-slate-150"
+                        className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 dark:text-slate-100"
                         value={editRateBuffalo}
                         onChange={e => setEditRateBuffalo(Number(e.target.value))}
                         required
@@ -528,7 +528,7 @@ function CustomerDetailContent() {
                     <label className="text-xs font-semibold text-slate-500">Milk Rate (₹/L)</label>
                     <input 
                       type="number" 
-                      className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 dark:text-slate-150"
+                      className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 dark:text-slate-100"
                       value={editRate}
                       onChange={e => setEditRate(Number(e.target.value))}
                       required
@@ -539,7 +539,7 @@ function CustomerDetailContent() {
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-slate-500">Message Language</label>
                   <select 
-                    className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 dark:text-slate-150"
+                    className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 dark:text-slate-100"
                     value={editMessageLanguage}
                     onChange={e => setEditMessageLanguage(e.target.value as any)}
                   >
@@ -550,7 +550,7 @@ function CustomerDetailContent() {
 
                 <div className="flex justify-between items-center pt-2">
                   <div>
-                    <h5 className="text-xs font-semibold text-slate-700 dark:text-slate-350">Active Status</h5>
+                    <h5 className="text-xs font-semibold text-slate-700 dark:text-slate-300">Active Status</h5>
                     <p className="text-[10px] text-slate-400">Check to allow deliveries</p>
                   </div>
                   <input 
