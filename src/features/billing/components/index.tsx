@@ -73,7 +73,7 @@ export const BillInvoiceView: React.FC<BillInvoiceViewProps> = ({ bill, onClose 
     }
     if (buffaloQty > 0) {
       breakdownText += isMarathi
-        ? `म्शीचे दूध: ${cleanBuffaloQty} L X ₹${buffaloRate.toFixed(2)}/L = ₹${buffaloAmt.toFixed(2)}\n`
+        ? `म्हशीचे दूध: ${cleanBuffaloQty} L X ₹${buffaloRate.toFixed(2)}/L = ₹${buffaloAmt.toFixed(2)}\n`
         : `Buffalo Milk: ${cleanBuffaloQty} L X ₹${buffaloRate.toFixed(2)}/L = ₹${buffaloAmt.toFixed(2)}\n`;
     }
     if (mixedQty > 0) {
