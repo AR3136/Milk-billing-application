@@ -2,11 +2,18 @@
   "name": "Ganga Dairy Farm",
   "short_name": "GangaDairy",
   "description": "Professional milk billing and customer management system",
-  "start_url": "/dashboard",
+  "start_url": "/dashboard/",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
+  "background_color": "#0f172a",
   "theme_color": "#2563eb",
-  "orientation": "any",
+  "orientation": "portrait-primary",
+  "lang": "en-IN",
+  "dir": "ltr",
+  "id": "/dashboard/",
+  "categories": ["business", "finance", "productivity"],
+  "prefer_related_applications": false,
   "icons": [
     {
       "src": "/icons/icon-48x48.png",
@@ -81,7 +88,28 @@
       "purpose": "maskable"
     }
   ],
-  "categories": ["business", "finance", "productivity"],
-  "screenshots": [],
-  "prefer_related_applications": false
+  "shortcuts": [
+    {
+      "name": "Milk Entry",
+      "short_name": "Entry",
+      "description": "Log daily milk collection",
+      "url": "/milk-entry/",
+      "icons": [{ "src": "/icons/icon-96x96.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Billing",
+      "short_name": "Bills",
+      "description": "View and send invoices",
+      "url": "/billing/",
+      "icons": [{ "src": "/icons/icon-96x96.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Payments",
+      "short_name": "Pay",
+      "description": "Record customer payments",
+      "url": "/payments/",
+      "icons": [{ "src": "/icons/icon-96x96.png", "sizes": "96x96" }]
+    }
+  ],
+  "screenshots": []
 }
