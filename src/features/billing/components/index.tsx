@@ -81,6 +81,8 @@ export const BillInvoiceView: React.FC<BillInvoiceViewProps> = ({ bill, onClose 
     let paymentText = '';
     if (bill.paid_amount > 0) {
       paymentText = `Paid in Cycle: -₹${bill.paid_amount.toFixed(2)}\n`;
+    } else if (bill.paid_amount < 0) {
+      paymentText = `Credit Refunded: +₹${Math.abs(bill.paid_amount).toFixed(2)}\n`;
     }
 
     const netVal = (bill.balance_forward || 0) + displayAmt - bill.paid_amount;
@@ -216,12 +218,17 @@ export const BillInvoiceView: React.FC<BillInvoiceViewProps> = ({ bill, onClose 
             <span className="text-slate-500 dark:text-slate-400">Balance dues forward</span>
             <span className="font-semibold text-slate-800 dark:text-slate-150 font-medium">₹{(bill.balance_forward || 0).toFixed(2)}</span>
           </div>
-          {bill.paid_amount > 0 && (
+          {bill.paid_amount > 0 ? (
             <div className="flex justify-between text-emerald-600 dark:text-emerald-450 font-bold">
               <span>Paid in Cycle</span>
               <span>-₹{bill.paid_amount.toFixed(2)}</span>
             </div>
-          )}
+          ) : bill.paid_amount < 0 ? (
+            <div className="flex justify-between text-rose-600 dark:text-rose-450 font-bold">
+              <span>Credit Refunded</span>
+              <span>+₹{Math.abs(bill.paid_amount).toFixed(2)}</span>
+            </div>
+          ) : null}
           <hr className="border-slate-100 dark:border-slate-800" />
           {(() => {
             const netVal = (bill.balance_forward || 0) + displayAmt - bill.paid_amount;

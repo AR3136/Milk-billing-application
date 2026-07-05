@@ -9,9 +9,11 @@ import { toast } from 'sonner';
 
 export default function ExpensesPage() {
   const expenses = useAppStore((state) => state.expenses);
+  const customers = useAppStore((state) => state.customers);
   const addExpense = useAppStore((state) => state.addExpense);
 
   const [category, setCategory] = useState('feed');
+  const [selectedCustomerId, setSelectedCustomerId] = useState('');
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
@@ -23,12 +25,23 @@ export default function ExpensesPage() {
       toast.error('Please fill in description and amount.');
       return;
     }
+    if (category === 'customer_credit_settlement' && !selectedCustomerId) {
+      toast.error('Please select a customer to settle credit.');
+      return;
+    }
     setIsSaving(true);
     try {
-      await addExpense({ category, description, amount: Number(amount), date });
+      await addExpense({ 
+        category, 
+        description, 
+        amount: Number(amount), 
+        date,
+        customerId: category === 'customer_credit_settlement' ? selectedCustomerId : undefined
+      });
       toast.success('✓ Expense recorded successfully!');
       setDescription('');
       setAmount('');
+      setSelectedCustomerId('');
     } catch (err: any) {
       toast.error(err.message || 'Failed to save expense.');
     } finally {
@@ -56,9 +69,27 @@ export default function ExpensesPage() {
                   <option value="salary">Staff Salary</option>
                   <option value="transport">Transport / Diesel</option>
                   <option value="maintenance">Maintenance / Repair</option>
+                  <option value="customer_credit_settlement">Customer Credit Settlement</option>
                   <option value="other">Other Outflow</option>
                 </select>
               </div>
+
+              {category === 'customer_credit_settlement' && (
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-slate-500">Select Customer</label>
+                  <select 
+                    className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    value={selectedCustomerId}
+                    onChange={e => setSelectedCustomerId(e.target.value)}
+                    required
+                  >
+                    <option value="">-- Choose Customer --</option>
+                    {customers.map(c => (
+                      <option key={c.id} value={c.id}>{c.name} (Bal: ₹{c.balance.toFixed(2)})</option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               <Input 
                 label="Description" 
@@ -106,18 +137,29 @@ export default function ExpensesPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50 dark:divide-slate-800/50">
-                  {expenses.map(ex => (
-                    <tr key={ex.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/30 transition-colors">
-                      <td className="py-3.5 px-4">{ex.date}</td>
-                      <td className="py-3.5 px-4">
-                        <Badge variant="neutral" className="capitalize">
-                          {ex.category}
-                        </Badge>
-                      </td>
-                      <td className="py-3.5 px-4 text-slate-600 dark:text-slate-300 font-semibold">{ex.description}</td>
-                      <td className="py-3.5 px-4 text-right font-bold text-rose-600 dark:text-rose-400">₹{ex.amount}</td>
-                    </tr>
-                  ))}
+                  {expenses.map(ex => {
+                    const matchCust = customers.find(c => c.id === ex.customerId);
+                    const cleanCategoryName = ex.category === 'customer_credit_settlement' ? 'Credit Settlement' : ex.category;
+                    return (
+                      <tr key={ex.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/30 transition-colors">
+                        <td className="py-3.5 px-4">{ex.date}</td>
+                        <td className="py-3.5 px-4">
+                          <Badge variant={ex.category === 'customer_credit_settlement' ? 'primary' : 'neutral'} className="capitalize">
+                            {cleanCategoryName}
+                          </Badge>
+                        </td>
+                        <td className="py-3.5 px-4 text-slate-600 dark:text-slate-300 font-semibold">
+                          {ex.description}
+                          {matchCust && (
+                            <span className="text-[10px] text-blue-600 dark:text-blue-400 block font-normal">
+                              To customer: {matchCust.name}
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-3.5 px-4 text-right font-bold text-rose-600 dark:text-rose-400">₹{ex.amount}</td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

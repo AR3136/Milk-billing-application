@@ -54,6 +54,7 @@ export interface Expense {
   description: string;
   amount: number;
   date: string;
+  customerId?: string;
 }
 
 export interface CurrentUser {
@@ -214,6 +215,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         description: ex.description,
         amount: Number(ex.amount),
         date: ex.date,
+        customerId: ex.customer_id || undefined,
       }));
 
       const updatedCustomers = customersList.map(c => {
@@ -223,7 +225,10 @@ export const useAppStore = create<AppStore>((set, get) => ({
         const totalPaid = paymentsList
           .filter(p => p.customerId === c.id)
           .reduce((sum, p) => sum + p.amount, 0);
-        const rawBalance = totalMilk - totalPaid;
+        const totalCreditSettle = expensesList
+          .filter(ex => ex.category === 'customer_credit_settlement' && ex.customerId === c.id)
+          .reduce((sum, ex) => sum + ex.amount, 0);
+        const rawBalance = totalMilk - (totalPaid - totalCreditSettle);
         const cleanBalance = Math.abs(rawBalance) < 0.01 ? 0 : parseFloat(rawBalance.toFixed(2));
         return { ...c, balance: cleanBalance };
       });
@@ -384,6 +389,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         description: ex.description,
         amount: ex.amount,
         date: ex.date,
+        customer_id: ex.customerId || null,
       }])
       .select()
       .single();
@@ -396,8 +402,10 @@ export const useAppStore = create<AppStore>((set, get) => ({
       description: inserted.description,
       amount: Number(inserted.amount),
       date: inserted.date,
+      customerId: inserted.customer_id || undefined,
     };
     set((state) => ({ expenses: [newExpense, ...state.expenses] }));
+    await get().fetchData();
   },
 
   deleteCustomer: async (id) => {

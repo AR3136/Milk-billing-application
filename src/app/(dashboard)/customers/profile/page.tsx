@@ -16,6 +16,7 @@ function CustomerDetailContent() {
   const customers = useAppStore((state) => state.customers);
   const milkEntries = useAppStore((state) => state.milkEntries);
   const payments = useAppStore((state) => state.payments);
+  const expenses = useAppStore((state) => state.expenses);
   const deleteCustomer = useAppStore((state) => state.deleteCustomer);
 
   const customer = customers.find(c => c.id === id);
@@ -29,6 +30,27 @@ function CustomerDetailContent() {
   // Filter entries
   const customerEntries = milkEntries.filter(e => e.customerId === id);
   const customerPayments = payments.filter(p => p.customerId === id);
+  const customerSettlements = expenses.filter(
+    ex => ex.category === 'customer_credit_settlement' && ex.customerId === id
+  );
+
+  // Combine payments and settlements for unified history display
+  const combinedHistory = [
+    ...customerPayments.map(p => ({
+      id: p.id,
+      date: p.date,
+      type: 'payment' as const,
+      method: p.method,
+      amount: p.amount,
+    })),
+    ...customerSettlements.map(ex => ({
+      id: ex.id,
+      date: ex.date,
+      type: 'settlement' as const,
+      method: 'credit settlement',
+      amount: ex.amount,
+    }))
+  ].sort((a, b) => b.date.localeCompare(a.date));
 
   useEffect(() => {
     async function checkDeletionRules() {
@@ -274,26 +296,34 @@ function CustomerDetailContent() {
                   <thead>
                     <tr className="border-b border-slate-100 dark:border-slate-800 text-slate-500 dark:text-slate-400 uppercase font-semibold sticky top-0 bg-white dark:bg-slate-800 z-10">
                       <th className="py-2.5 px-3">Date</th>
-                      <th className="py-2.5 px-3">Method</th>
-                      <th className="py-2.5 px-3 text-right">Amount Paid</th>
+                      <th className="py-2.5 px-3">Type / Method</th>
+                      <th className="py-2.5 px-3 text-right">Amount</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-50 dark:divide-slate-800/50">
-                    {customerPayments.length > 0 ? (
-                      customerPayments.map((p) => (
-                        <tr key={p.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/10">
-                          <td className="py-2.5 px-3">{p.date}</td>
-                          <td className="py-2.5 px-3 capitalize">
-                            <Badge variant={p.method === 'upi' ? 'primary' : 'secondary'}>
-                              {p.method}
-                            </Badge>
+                    {combinedHistory.length > 0 ? (
+                      combinedHistory.map((item) => (
+                        <tr key={item.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/10">
+                          <td className="py-2.5 px-3">{item.date}</td>
+                          <td className="py-2.5 px-3 capitalize font-semibold">
+                            {item.type === 'payment' ? (
+                              <Badge variant={item.method === 'upi' ? 'primary' : 'secondary'}>
+                                {item.method}
+                              </Badge>
+                            ) : (
+                              <Badge variant="neutral" className="text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/20 border border-rose-100 dark:border-rose-900/40">
+                                Settle Credit
+                              </Badge>
+                            )}
                           </td>
-                          <td className="py-2.5 px-3 text-right font-bold text-emerald-600 dark:text-emerald-400 font-medium">₹{p.amount.toFixed(2)}</td>
+                          <td className={`py-2.5 px-3 text-right font-black ${item.type === 'payment' ? 'text-emerald-600 dark:text-emerald-450' : 'text-rose-600 dark:text-rose-450'}`}>
+                            {item.type === 'payment' ? '+' : '-'}₹{item.amount.toFixed(2)}
+                          </td>
                         </tr>
                       ))
                     ) : (
                       <tr>
-                        <td colSpan={3} className="py-8 text-center text-slate-500">No payment receipts logged for this member yet.</td>
+                        <td colSpan={3} className="py-8 text-center text-slate-500">No payment or settlement receipts logged for this member yet.</td>
                       </tr>
                     )}
                   </tbody>

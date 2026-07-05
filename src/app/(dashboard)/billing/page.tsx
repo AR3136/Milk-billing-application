@@ -12,6 +12,7 @@ export default function BillingPage() {
   const customers = useAppStore((state) => state.customers);
   const milkEntries = useAppStore((state) => state.milkEntries);
   const payments = useAppStore((state) => state.payments);
+  const expenses = useAppStore((state) => state.expenses);
   const [selectedBill, setSelectedBill] = useState<Bill | null>(null);
 
   // Set default dates for the current billing cycle (current month)
@@ -35,16 +36,23 @@ export default function BillingPage() {
     const totalQuantity = cycleEntries.reduce((sum, e) => sum + e.quantity, 0);
     const cycleTotalAmount = cycleEntries.reduce((sum, e) => sum + e.amount, 0);
 
-    // 2. Fetch payments made during this cycle
-    const cyclePayments = payments
+    // 2. Fetch payments made during this cycle, deducting credit settlements
+    const cyclePaymentsRaw = payments
       .filter(p => p.customerId === cust.id && p.date >= startDate && p.date <= endDate)
       .reduce((sum, p) => sum + p.amount, 0);
+    const cycleSettlements = expenses
+      .filter(ex => ex.category === 'customer_credit_settlement' && ex.customerId === cust.id && ex.date >= startDate && ex.date <= endDate)
+      .reduce((sum, ex) => sum + ex.amount, 0);
+    const cyclePayments = cyclePaymentsRaw - cycleSettlements;
 
     // 3. Compute balance forward (dues before cycle start date)
     const priorEntries = milkEntries.filter(e => e.customerId === cust.id && e.date < startDate);
     const priorMilk = priorEntries.reduce((sum, e) => sum + e.amount, 0);
     const priorPayments = payments.filter(p => p.customerId === cust.id && p.date < startDate);
-    const priorPaid = priorPayments.reduce((sum, p) => sum + p.amount, 0);
+    const priorPaidRaw = priorPayments.reduce((sum, p) => sum + p.amount, 0);
+    const priorSettlements = expenses.filter(ex => ex.category === 'customer_credit_settlement' && ex.customerId === cust.id && ex.date < startDate);
+    const priorSettled = priorSettlements.reduce((sum, ex) => sum + ex.amount, 0);
+    const priorPaid = priorPaidRaw - priorSettled;
 
     const rawBalanceForward = priorMilk - priorPaid;
     const balanceForward = Math.abs(rawBalanceForward) < 0.01 ? 0 : parseFloat(rawBalanceForward.toFixed(2));
