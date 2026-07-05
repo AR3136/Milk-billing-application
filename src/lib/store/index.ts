@@ -408,23 +408,45 @@ export const useAppStore = create<AppStore>((set, get) => ({
       throw new Error(`Cannot delete customer: Outstanding balance must be ₹0.00. Current: ₹${currentCustomer.balance.toFixed(2)}.`);
     }
 
-    // 1. Fetch bills to clear line items first due to database references constraints
-    const { data: customerBills } = await supabase
-      .from('bills')
+    // 1. Get all milk entries for this customer to delete referencing bill line items
+    const { data: customerEntries, error: fetchEntriesErr } = await supabase
+      .from('milk_entries')
       .select('id')
       .eq('customer_id', id);
 
-    if (customerBills && customerBills.length > 0) {
-      const billIds = customerBills.map(b => b.id);
-      await supabase.from('bill_line_items').delete().in('bill_id', billIds);
-      await supabase.from('bills').delete().in('id', billIds);
+    if (fetchEntriesErr) throw new Error(`Failed to check customer entries: ${fetchEntriesErr.message}`);
+
+    if (customerEntries && customerEntries.length > 0) {
+      const entryIds = customerEntries.map(e => e.id);
+      const { error: delLineItemsErr } = await supabase
+        .from('bill_line_items')
+        .delete()
+        .in('milk_entry_id', entryIds);
+      if (delLineItemsErr) throw new Error(`Failed to delete bill details: ${delLineItemsErr.message}`);
     }
 
-    // 2. Cascade delete entries and payments associated with this customer
-    await supabase.from('milk_entries').delete().eq('customer_id', id);
-    await supabase.from('payments').delete().eq('customer_id', id);
+    // 2. Delete customer's bills
+    const { error: delBillsErr } = await supabase
+      .from('bills')
+      .delete()
+      .eq('customer_id', id);
+    if (delBillsErr) throw new Error(`Failed to delete customer invoices: ${delBillsErr.message}`);
 
-    // 3. Perform customer deletion
+    // 3. Delete customer's milk entries
+    const { error: delEntriesErr } = await supabase
+      .from('milk_entries')
+      .delete()
+      .eq('customer_id', id);
+    if (delEntriesErr) throw new Error(`Failed to delete customer milk entries: ${delEntriesErr.message}`);
+
+    // 4. Delete customer's payments
+    const { error: delPaymentsErr } = await supabase
+      .from('payments')
+      .delete()
+      .eq('customer_id', id);
+    if (delPaymentsErr) throw new Error(`Failed to delete customer payments: ${delPaymentsErr.message}`);
+
+    // 5. Perform customer deletion
     const { error: softDelErr } = await supabase
       .from('customers')
       .update({ deleted_at: new Date().toISOString(), is_active: false })
@@ -435,7 +457,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         .from('customers')
         .delete()
         .eq('id', id);
-      if (hardDelErr) throw new Error(hardDelErr.message);
+      if (hardDelErr) throw new Error(`Failed to delete customer: ${hardDelErr.message}`);
     }
 
     // Update local state
