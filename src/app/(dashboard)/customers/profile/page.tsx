@@ -97,7 +97,7 @@ function CustomerDetailContent() {
 
   // Daily Average
   const dailyAverage = customerEntries.length > 0 
-    ? (customerEntries.reduce((sum, e) => sum + (e.quantity ?? 0), 0) / customerEntries.length).toFixed(1)
+    ? (customerEntries.reduce((sum, e) => sum + e.quantity, 0) / customerEntries.length).toFixed(1)
     : '0';
 
   // Weekly Total (Last 7 days)
@@ -105,7 +105,7 @@ function CustomerDetailContent() {
   oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
   const weeklyTotal = customerEntries
     .filter(e => new Date(e.date) >= oneWeekAgo)
-    .reduce((sum, e) => sum + (e.quantity ?? 0), 0)
+    .reduce((sum, e) => sum + e.quantity, 0)
     .toFixed(1);
 
   // Monthly Total (Last 30 days)
@@ -113,7 +113,7 @@ function CustomerDetailContent() {
   oneMonthAgo.setDate(oneMonthAgo.getDate() - 30);
   const monthlyTotal = customerEntries
     .filter(e => new Date(e.date) >= oneMonthAgo)
-    .reduce((sum, e) => sum + (e.quantity ?? 0), 0)
+    .reduce((sum, e) => sum + e.quantity, 0)
     .toFixed(1);
 
   const handleSaveEdit = async (e: React.FormEvent) => {
@@ -342,18 +342,8 @@ function CustomerDetailContent() {
                               {e.milkType}
                             </Badge>
                           </td>
-                          <td className="py-2.5 px-3 font-semibold">
-                            {e.pricingMethod === 'amount'
-                              ? <span className="text-emerald-600 dark:text-emerald-400 text-[10px] font-bold">Direct ₹</span>
-                              : <>{e.quantity} L</>
-                            }
-                          </td>
-                          <td className="py-2.5 px-3 text-right">
-                            {e.pricingMethod === 'amount'
-                              ? <span className="text-slate-400 dark:text-slate-500 italic">—</span>
-                              : <>₹{e.rate}/L</>
-                            }
-                          </td>
+                          <td className="py-2.5 px-3 font-semibold">{e.quantity} L</td>
+                          <td className="py-2.5 px-3 text-right">₹{e.rate}/L</td>
                           <td className="py-2.5 px-3 text-right font-bold text-slate-800 dark:text-slate-100">₹{e.amount}</td>
                         </tr>
                       ))
@@ -466,14 +456,14 @@ function CustomerDetailContent() {
               </div>
               <div>
                 <h3 className="font-bold text-slate-800 dark:text-slate-100 text-sm">Edit Member Details</h3>
-                <p className="text-[10px] text-slate-500 font-semibold uppercase tracking-wide">Update customer details & pricing</p>
+                <p className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wide">Update customer details & pricing</p>
               </div>
             </div>
 
             <form onSubmit={handleSaveEdit} className="space-y-4">
               <div className="space-y-3.5">
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-slate-500">Contact Name</label>
+                  <label className="text-xs font-semibold text-slate-500 dark:text-slate-400">Contact Name</label>
                   <input 
                     type="text" 
                     className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 dark:text-slate-100"
@@ -485,7 +475,7 @@ function CustomerDetailContent() {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-slate-500">Phone Number</label>
+                  <label className="text-xs font-semibold text-slate-500 dark:text-slate-400">Phone Number</label>
                   <input 
                     type="text" 
                     className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 dark:text-slate-100"
@@ -497,23 +487,23 @@ function CustomerDetailContent() {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-slate-500">Milk Type</label>
+                  <label className="text-xs font-semibold text-slate-500 dark:text-slate-400">Milk Type</label>
                   <select 
                     className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 dark:text-slate-100"
                     value={editMilkType}
                     onChange={e => setEditMilkType(e.target.value as any)}
                   >
-                    <option value="cow">Cow</option>
-                    <option value="buffalo">Buffalo</option>
-                    <option value="mixed">Mixed</option>
-                    <option value="both">Both (Cow + Buffalo)</option>
+                    <option value="cow" className="bg-white dark:bg-slate-800">Cow</option>
+                    <option value="buffalo" className="bg-white dark:bg-slate-800">Buffalo</option>
+                    <option value="mixed" className="bg-white dark:bg-slate-800">Mixed</option>
+                    <option value="both" className="bg-white dark:bg-slate-800">Both (Cow + Buffalo)</option>
                   </select>
                 </div>
 
                 {editMilkType === 'both' ? (
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1">
-                      <label className="text-[11px] font-semibold text-slate-500">Cow Rate (₹/L)</label>
+                      <label className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">Cow Rate (₹/L)</label>
                       <input 
                         type="number" 
                         className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 dark:text-slate-100"
@@ -523,7 +513,7 @@ function CustomerDetailContent() {
                       />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-[11px] font-semibold text-slate-500">Buffalo Rate (₹/L)</label>
+                      <label className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">Buffalo Rate (₹/L)</label>
                       <input 
                         type="number" 
                         className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 dark:text-slate-100"
@@ -535,7 +525,7 @@ function CustomerDetailContent() {
                   </div>
                 ) : (
                   <div className="space-y-1">
-                    <label className="text-xs font-semibold text-slate-500">Milk Rate (₹/L)</label>
+                    <label className="text-xs font-semibold text-slate-500 dark:text-slate-400">Milk Rate (₹/L)</label>
                     <input 
                       type="number" 
                       className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 dark:text-slate-100"
@@ -547,25 +537,25 @@ function CustomerDetailContent() {
                 )}
 
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-slate-500">Message Language</label>
+                  <label className="text-xs font-semibold text-slate-500 dark:text-slate-400">Message Language</label>
                   <select 
                     className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 dark:text-slate-100"
                     value={editMessageLanguage}
                     onChange={e => setEditMessageLanguage(e.target.value as any)}
                   >
-                    <option value="english">English (Default)</option>
-                    <option value="marathi">Marathi (मराठी)</option>
+                    <option value="english" className="bg-white dark:bg-slate-800">English (Default)</option>
+                    <option value="marathi" className="bg-white dark:bg-slate-800">Marathi (मराठी)</option>
                   </select>
                 </div>
 
-                <div className="flex justify-between items-center pt-2">
+                <div className="flex justify-between items-center pt-2 bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-100 dark:border-slate-700">
                   <div>
-                    <h5 className="text-xs font-semibold text-slate-700 dark:text-slate-350">Active Status</h5>
-                    <p className="text-[10px] text-slate-400">Check to allow deliveries</p>
+                    <h5 className="text-xs font-semibold text-slate-700 dark:text-slate-200">Active Status</h5>
+                    <p className="text-[10px] text-slate-400 dark:text-slate-500">Check to allow deliveries</p>
                   </div>
                   <input 
                     type="checkbox" 
-                    className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 cursor-pointer"
+                    className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 cursor-pointer accent-blue-600"
                     checked={editIsActive}
                     onChange={e => setEditIsActive(e.target.checked)}
                   />

@@ -13,8 +13,14 @@ interface BillInvoiceViewProps {
 export const BillInvoiceView: React.FC<BillInvoiceViewProps> = ({ bill, onClose }) => {
   const customers = useAppStore(state => state.customers);
   const milkEntries = useAppStore(state => state.milkEntries);
+  const addPayment = useAppStore(state => state.addPayment);
   const matchedCust = customers.find(c => c.id === bill.customer_id);
   const phone = matchedCust?.phone || '9876543210';
+
+  const [payAmt, setPayAmt] = useState('');
+  const [payMethod, setPayMethod] = useState<'cash' | 'upi' | 'bank_transfer'>('cash');
+  const [isSavingPayment, setIsSavingPayment] = useState(false);
+  const today = new Date().toISOString().split('T')[0];
 
   const [bizName, setBizName] = useState('Ganga Dairy Farm');
   const [bizAddress, setBizAddress] = useState('Ganga Chowk, Sector-4, Pune');
@@ -30,7 +36,7 @@ export const BillInvoiceView: React.FC<BillInvoiceViewProps> = ({ bill, onClose 
     }
   }, []);
 
-  // Get actual entries for this customer in this billing cycle
+  // Get actual entries for this customer in this billing cycle to calculate precise values
   const cycleEntries = milkEntries.filter(
     e => e.customerId === bill.customer_id && e.date >= bill.from_date && e.date <= bill.to_date
   );
@@ -39,90 +45,47 @@ export const BillInvoiceView: React.FC<BillInvoiceViewProps> = ({ bill, onClose 
   const buffaloEntries = cycleEntries.filter(e => e.milkType === 'buffalo');
   const mixedEntries = cycleEntries.filter(e => e.milkType !== 'cow' && e.milkType !== 'buffalo');
 
-  // Quantities (only for quantity-based entries)
-  const cowQtyEntries = cowEntries.filter(e => e.pricingMethod !== 'amount');
-  const buffaloQtyEntries = buffaloEntries.filter(e => e.pricingMethod !== 'amount');
-  const mixedQtyEntries = mixedEntries.filter(e => e.pricingMethod !== 'amount');
-
-  const cowQty = cowQtyEntries.reduce((sum, e) => sum + (e.quantity ?? 0), 0);
-  const buffaloQty = buffaloQtyEntries.reduce((sum, e) => sum + (e.quantity ?? 0), 0);
-  const mixedQty = mixedQtyEntries.reduce((sum, e) => sum + (e.quantity ?? 0), 0);
-
-  // Use stored amount always (works for both pricing methods)
-  const cowAmt = cowEntries.reduce((sum, e) => sum + e.amount, 0);
-  const buffaloAmt = buffaloEntries.reduce((sum, e) => sum + e.amount, 0);
-  const mixedAmt = mixedEntries.reduce((sum, e) => sum + e.amount, 0);
-
+  const cowQty = cowEntries.reduce((sum, e) => sum + e.quantity, 0);
   const cowRate = matchedCust ? (matchedCust.milkType === 'both' ? matchedCust.rateCow : matchedCust.rate) : 0;
-  const buffaloRate = matchedCust ? (matchedCust.milkType === 'both' ? matchedCust.rateBuffalo : matchedCust.rate) : 0;
-  const mixedRate = matchedCust?.rate || 0;
+  const cowAmt = Math.ceil(cowQty * cowRate);
 
-  // Has any amount-based entries per type
-  const cowHasAmtEntries = cowEntries.some(e => e.pricingMethod === 'amount');
-  const buffaloHasAmtEntries = buffaloEntries.some(e => e.pricingMethod === 'amount');
-  const mixedHasAmtEntries = mixedEntries.some(e => e.pricingMethod === 'amount');
+  const buffaloQty = buffaloEntries.reduce((sum, e) => sum + e.quantity, 0);
+  const buffaloRate = matchedCust ? (matchedCust.milkType === 'both' ? matchedCust.rateBuffalo : matchedCust.rate) : 0;
+  const buffaloAmt = Math.ceil(buffaloQty * buffaloRate);
+
+  const mixedQty = mixedEntries.reduce((sum, e) => sum + e.quantity, 0);
+  const mixedRate = matchedCust?.rate || 0;
+  const mixedAmt = Math.ceil(mixedQty * mixedRate);
 
   // Use computed cycle values, with fallback to bill defaults if entries are not yet synced/empty
+  const displayQty = cycleEntries.length > 0 ? cycleEntries.reduce((sum, e) => sum + e.quantity, 0) : bill.total_quantity;
   const displayAmt = cycleEntries.length > 0 ? Math.ceil(cowAmt + buffaloAmt + mixedAmt) : bill.total_amount;
-  const displayQty = cycleEntries.length > 0 ? cycleEntries.reduce((sum, e) => sum + (e.quantity ?? 0), 0) : bill.total_quantity;
+  const avgRate = matchedCust?.rate || (displayQty > 0 ? (displayAmt / displayQty) : 0);
 
-  // Clean quantities to avoid floating point issues
+  // Clean quantities to avoid floating point issues (e.g. 0.8500000000000001 L)
   const cleanCowQty = parseFloat(cowQty.toFixed(2));
   const cleanBuffaloQty = parseFloat(buffaloQty.toFixed(2));
   const cleanMixedQty = parseFloat(mixedQty.toFixed(2));
   const cleanDisplayQty = parseFloat(displayQty.toFixed(2));
-  const avgRate = matchedCust?.rate || (displayQty > 0 ? (displayAmt / displayQty) : 0);
 
   const buildTextInvoice = () => {
     const isMarathi = matchedCust?.messageLanguage === 'marathi';
     
     let breakdownText = '';
-    if (cowEntries.length > 0) {
-      if (cowHasAmtEntries && cowQty === 0) {
-        // All amount-based
-        breakdownText += isMarathi
-          ? `गाईचे दूध (थेट रक्कम): ₹${cowAmt.toFixed(2)}\n`
-          : `Cow Milk (Direct Amount): ₹${cowAmt.toFixed(2)}\n`;
-      } else if (cowHasAmtEntries) {
-        // Mixed
-        breakdownText += isMarathi
-          ? `गाईचे दूध: ${cleanCowQty} L × ₹${cowRate.toFixed(2)}/L + थेट रक्कम = ₹${cowAmt.toFixed(2)}\n`
-          : `Cow Milk: ${cleanCowQty} L × ₹${cowRate.toFixed(2)}/L + Direct = ₹${cowAmt.toFixed(2)}\n`;
-      } else {
-        breakdownText += isMarathi
-          ? `गाईचे दूध: ${cleanCowQty} L X ₹${cowRate.toFixed(2)}/L = ₹${cowAmt.toFixed(2)}\n`
-          : `Cow Milk: ${cleanCowQty} L X ₹${cowRate.toFixed(2)}/L = ₹${cowAmt.toFixed(2)}\n`;
-      }
+    if (cowQty > 0) {
+      breakdownText += isMarathi
+        ? `गाईचे दूध: ${cleanCowQty} L X ₹${cowRate.toFixed(2)}/L = ₹${cowAmt.toFixed(2)}\n`
+        : `Cow Milk: ${cleanCowQty} L X ₹${cowRate.toFixed(2)}/L = ₹${cowAmt.toFixed(2)}\n`;
     }
-    if (buffaloEntries.length > 0) {
-      if (buffaloHasAmtEntries && buffaloQty === 0) {
-        breakdownText += isMarathi
-          ? `म्हशीचे दूध (थेट रक्कम): ₹${buffaloAmt.toFixed(2)}\n`
-          : `Buffalo Milk (Direct Amount): ₹${buffaloAmt.toFixed(2)}\n`;
-      } else if (buffaloHasAmtEntries) {
-        breakdownText += isMarathi
-          ? `म्हशीचे दूध: ${cleanBuffaloQty} L × ₹${buffaloRate.toFixed(2)}/L + थेट रक्कम = ₹${buffaloAmt.toFixed(2)}\n`
-          : `Buffalo Milk: ${cleanBuffaloQty} L × ₹${buffaloRate.toFixed(2)}/L + Direct = ₹${buffaloAmt.toFixed(2)}\n`;
-      } else {
-        breakdownText += isMarathi
-          ? `म्हशीचे दूध: ${cleanBuffaloQty} L X ₹${buffaloRate.toFixed(2)}/L = ₹${buffaloAmt.toFixed(2)}\n`
-          : `Buffalo Milk: ${cleanBuffaloQty} L X ₹${buffaloRate.toFixed(2)}/L = ₹${buffaloAmt.toFixed(2)}\n`;
-      }
+    if (buffaloQty > 0) {
+      breakdownText += isMarathi
+        ? `म्हशीचे दूध: ${cleanBuffaloQty} L X ₹${buffaloRate.toFixed(2)}/L = ₹${buffaloAmt.toFixed(2)}\n`
+        : `Buffalo Milk: ${cleanBuffaloQty} L X ₹${buffaloRate.toFixed(2)}/L = ₹${buffaloAmt.toFixed(2)}\n`;
     }
-    if (mixedEntries.length > 0) {
-      if (mixedHasAmtEntries && mixedQty === 0) {
-        breakdownText += isMarathi
-          ? `मिश्र दूध (थेट रक्कम): ₹${mixedAmt.toFixed(2)}\n`
-          : `Mixed Milk (Direct Amount): ₹${mixedAmt.toFixed(2)}\n`;
-      } else if (mixedHasAmtEntries) {
-        breakdownText += isMarathi
-          ? `मिश्र दूध: ${cleanMixedQty} L × ₹${mixedRate.toFixed(2)}/L + थेट रक्कम = ₹${mixedAmt.toFixed(2)}\n`
-          : `Mixed Milk: ${cleanMixedQty} L × ₹${mixedRate.toFixed(2)}/L + Direct = ₹${mixedAmt.toFixed(2)}\n`;
-      } else {
-        breakdownText += isMarathi
-          ? `मिश्र दूध: ${cleanMixedQty} L X ₹${mixedRate.toFixed(2)}/L = ₹${mixedAmt.toFixed(2)}\n`
-          : `Mixed Milk: ${cleanMixedQty} L X ₹${mixedRate.toFixed(2)}/L = ₹${mixedAmt.toFixed(2)}\n`;
-      }
+    if (mixedQty > 0) {
+      breakdownText += isMarathi
+        ? `मिश्र दूध: ${cleanMixedQty} L X ₹${mixedRate.toFixed(2)}/L = ₹${mixedAmt.toFixed(2)}\n`
+        : `Mixed Milk: ${cleanMixedQty} L X ₹${mixedRate.toFixed(2)}/L = ₹${mixedAmt.toFixed(2)}\n`;
     }
 
     if (!breakdownText) {
@@ -196,6 +159,30 @@ export const BillInvoiceView: React.FC<BillInvoiceViewProps> = ({ bill, onClose 
       `${bizThankYou}`;
   };
 
+  const handleRecordPayment = async () => {
+    const amt = Number(payAmt);
+    if (!amt || amt <= 0) {
+      toast.error('Please enter a valid payment amount.');
+      return;
+    }
+    setIsSavingPayment(true);
+    try {
+      await addPayment({
+        customerId: bill.customer_id,
+        customerName: bill.customer_name,
+        amount: amt,
+        date: today,
+        method: payMethod,
+      });
+      toast.success(`✓ Payment of ₹${amt} recorded for ${bill.customer_name}!`);
+      setPayAmt('');
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to record payment.');
+    } finally {
+      setIsSavingPayment(false);
+    }
+  };
+
   const handlePrint = () => {
     window.print();
   };
@@ -262,63 +249,33 @@ export const BillInvoiceView: React.FC<BillInvoiceViewProps> = ({ bill, onClose 
           <thead>
             <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-bold uppercase text-[9px]">
               <th className="py-2">Description</th>
-              <th className="py-2 text-right">Qty / Info</th>
+              <th className="py-2 text-right">Total Quantity</th>
               <th className="py-2 text-right">Rate</th>
               <th className="py-2 text-right">Total</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-50 dark:divide-slate-800/40">
-            {cowEntries.length > 0 && (
+            {cowQty > 0 && (
               <tr>
                 <td className="py-3 font-semibold text-slate-700 dark:text-slate-300">Cow Milk Delivery</td>
-                <td className="py-3 text-right font-medium text-slate-700 dark:text-slate-300">
-                  {cowHasAmtEntries && cowQty === 0 ? (
-                    <span className="text-emerald-600 dark:text-emerald-400 text-[10px] font-bold">Direct Amount</span>
-                  ) : cowHasAmtEntries ? (
-                    <span>{cleanCowQty} L + Direct</span>
-                  ) : (
-                    <span>{cleanCowQty} L</span>
-                  )}
-                </td>
-                <td className="py-3 text-right text-slate-600 dark:text-slate-400">
-                  {cowHasAmtEntries && cowQty === 0 ? '—' : `₹${cowRate.toFixed(2)}/L`}
-                </td>
+                <td className="py-3 text-right font-medium text-slate-700 dark:text-slate-300">{cleanCowQty} L</td>
+                <td className="py-3 text-right text-slate-600 dark:text-slate-400">₹{cowRate.toFixed(2)}/L</td>
                 <td className="py-3 text-right font-bold text-slate-800 dark:text-slate-100">₹{cowAmt.toFixed(2)}</td>
               </tr>
             )}
-            {buffaloEntries.length > 0 && (
+            {buffaloQty > 0 && (
               <tr>
                 <td className="py-3 font-semibold text-slate-700 dark:text-slate-300">Buffalo Milk Delivery</td>
-                <td className="py-3 text-right font-medium text-slate-700 dark:text-slate-300">
-                  {buffaloHasAmtEntries && buffaloQty === 0 ? (
-                    <span className="text-emerald-600 dark:text-emerald-400 text-[10px] font-bold">Direct Amount</span>
-                  ) : buffaloHasAmtEntries ? (
-                    <span>{cleanBuffaloQty} L + Direct</span>
-                  ) : (
-                    <span>{cleanBuffaloQty} L</span>
-                  )}
-                </td>
-                <td className="py-3 text-right text-slate-600 dark:text-slate-400">
-                  {buffaloHasAmtEntries && buffaloQty === 0 ? '—' : `₹${buffaloRate.toFixed(2)}/L`}
-                </td>
+                <td className="py-3 text-right font-medium text-slate-700 dark:text-slate-300">{cleanBuffaloQty} L</td>
+                <td className="py-3 text-right text-slate-600 dark:text-slate-400">₹{buffaloRate.toFixed(2)}/L</td>
                 <td className="py-3 text-right font-bold text-slate-800 dark:text-slate-100">₹{buffaloAmt.toFixed(2)}</td>
               </tr>
             )}
-            {mixedEntries.length > 0 && (
+            {mixedQty > 0 && (
               <tr>
                 <td className="py-3 font-semibold text-slate-700 dark:text-slate-300">Mixed Milk Delivery</td>
-                <td className="py-3 text-right font-medium text-slate-700 dark:text-slate-300">
-                  {mixedHasAmtEntries && mixedQty === 0 ? (
-                    <span className="text-emerald-600 dark:text-emerald-400 text-[10px] font-bold">Direct Amount</span>
-                  ) : mixedHasAmtEntries ? (
-                    <span>{cleanMixedQty} L + Direct</span>
-                  ) : (
-                    <span>{cleanMixedQty} L</span>
-                  )}
-                </td>
-                <td className="py-3 text-right text-slate-600 dark:text-slate-400">
-                  {mixedHasAmtEntries && mixedQty === 0 ? '—' : `₹${mixedRate.toFixed(2)}/L`}
-                </td>
+                <td className="py-3 text-right font-medium text-slate-700 dark:text-slate-300">{cleanMixedQty} L</td>
+                <td className="py-3 text-right text-slate-600 dark:text-slate-400">₹{mixedRate.toFixed(2)}/L</td>
                 <td className="py-3 text-right font-bold text-slate-800 dark:text-slate-100">₹{mixedAmt.toFixed(2)}</td>
               </tr>
             )}
@@ -339,11 +296,11 @@ export const BillInvoiceView: React.FC<BillInvoiceViewProps> = ({ bill, onClose 
         <div className="w-64 space-y-2 text-xs">
           <div className="flex justify-between">
             <span className="text-slate-500 dark:text-slate-400">Cycle yield amount</span>
-            <span className="font-semibold text-slate-800 dark:text-slate-100 font-medium">₹{displayAmt.toFixed(2)}</span>
+            <span className="font-semibold text-slate-800 dark:text-slate-150 font-medium">₹{displayAmt.toFixed(2)}</span>
           </div>
           <div className="flex justify-between">
             <span className="text-slate-500 dark:text-slate-400">Balance dues forward</span>
-            <span className="font-semibold text-slate-800 dark:text-slate-100 font-medium">₹{(bill.balance_forward || 0).toFixed(2)}</span>
+            <span className="font-semibold text-slate-800 dark:text-slate-150 font-medium">₹{(bill.balance_forward || 0).toFixed(2)}</span>
           </div>
           {bill.paid_amount > 0 ? (
             <div className="flex justify-between text-emerald-600 dark:text-emerald-450 font-bold">
@@ -377,6 +334,63 @@ export const BillInvoiceView: React.FC<BillInvoiceViewProps> = ({ bill, onClose 
           })()}
         </div>
       </div>
+
+      {/* Inline Record Payment Panel */}
+      {(() => {
+        const netVal = (bill.balance_forward || 0) + displayAmt - bill.paid_amount;
+        if (netVal > 0) {
+          const previewAmt = Number(payAmt) || 0;
+          const afterPayment = netVal - previewAmt;
+          return (
+            <div className="border-t border-slate-100 dark:border-slate-800 pt-4 space-y-3 no-print">
+              <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Record Payment</p>
+              <div className="flex flex-wrap gap-2 items-end">
+                <div className="flex-1 min-w-[120px] space-y-1">
+                  <label className="text-[10px] font-semibold text-slate-500 dark:text-slate-400">Amount (₹)</label>
+                  <input
+                    type="number"
+                    min="1"
+                    placeholder={`Max ₹${netVal.toFixed(2)}`}
+                    value={payAmt}
+                    onChange={e => setPayAmt(e.target.value)}
+                    className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 dark:text-slate-100"
+                    disabled={isSavingPayment}
+                  />
+                </div>
+                <div className="flex-1 min-w-[120px] space-y-1">
+                  <label className="text-[10px] font-semibold text-slate-500 dark:text-slate-400">Method</label>
+                  <select
+                    value={payMethod}
+                    onChange={e => setPayMethod(e.target.value as any)}
+                    className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 dark:text-slate-100"
+                    disabled={isSavingPayment}
+                  >
+                    <option value="cash" className="bg-white dark:bg-slate-800">Cash</option>
+                    <option value="upi" className="bg-white dark:bg-slate-800">UPI</option>
+                    <option value="bank_transfer" className="bg-white dark:bg-slate-800">Bank Transfer</option>
+                  </select>
+                </div>
+                <button
+                  onClick={handleRecordPayment}
+                  disabled={isSavingPayment || !payAmt}
+                  className="px-4 py-2 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-xl flex items-center gap-1.5 transition-colors whitespace-nowrap"
+                >
+                  {isSavingPayment ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
+                  Save Payment
+                </button>
+              </div>
+              {previewAmt > 0 && (
+                <div className="text-xs font-semibold text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/50 rounded-xl px-3 py-2">
+                  After payment: <span className={`font-black ${afterPayment <= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                    {afterPayment <= 0 ? `₹${Math.abs(afterPayment).toFixed(2)} Credit` : `₹${afterPayment.toFixed(2)} remaining`}
+                  </span>
+                </div>
+              )}
+            </div>
+          );
+        }
+        return null;
+      })()}
 
       {/* Footer trigger options bar */}
       <div className="flex justify-between items-center border-t border-slate-100 pt-6 flex-wrap gap-2 text-xs no-print">

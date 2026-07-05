@@ -48,7 +48,7 @@ export default function ReportsPage() {
 
   // Summary Metrics
   const totalLiters = useMemo(() => {
-    return filteredEntries.reduce((sum, e) => sum + (e.quantity ?? 0), 0);
+    return filteredEntries.reduce((sum, e) => sum + e.quantity, 0);
   }, [filteredEntries]);
 
   const totalValue = useMemo(() => {
@@ -87,7 +87,7 @@ export default function ReportsPage() {
           const dayEntries = filteredEntries.filter(
             (e) => e.customerId === cust.id && e.date === date
           );
-          const totalQty = dayEntries.reduce((sum, e) => sum + (e.quantity ?? 0), 0);
+          const totalQty = dayEntries.reduce((sum, e) => sum + e.quantity, 0);
           row[cust.name] = totalQty; // Considered 0 if no entries exist
           dayTotal += totalQty;
         });
@@ -207,7 +207,7 @@ export default function ReportsPage() {
                           const dayEntries = filteredEntries.filter(
                             (e) => e.customerId === cust.id && e.date === date
                           );
-                          const totalQty = dayEntries.reduce((sum, e) => sum + (e.quantity ?? 0), 0);
+                          const totalQty = dayEntries.reduce((sum, e) => sum + e.quantity, 0);
                           dayTotalQty += totalQty;
                           return (
                             <td key={cust.id} className="py-2 px-2 text-center border-r border-slate-200 dark:border-slate-800">
