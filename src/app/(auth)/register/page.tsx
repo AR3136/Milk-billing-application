@@ -37,11 +37,13 @@ export default function RegisterPage() {
     setIsLoading(true);
     const supabase = createClient();
     try {
+      const origin = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000';
       const { data: resData, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          data: { name, role }
+          data: { name, role },
+          emailRedirectTo: `${origin}/login`
         }
       });
 
