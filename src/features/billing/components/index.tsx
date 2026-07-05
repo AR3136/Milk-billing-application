@@ -63,32 +63,78 @@ export const BillInvoiceView: React.FC<BillInvoiceViewProps> = ({ bill, onClose 
   const cleanDisplayQty = parseFloat(displayQty.toFixed(2));
 
   const buildTextInvoice = () => {
+    const isMarathi = matchedCust?.messageLanguage === 'marathi';
+    
     let breakdownText = '';
     if (cowQty > 0) {
-      breakdownText += `Cow Milk: ${cleanCowQty} L X ₹${cowRate.toFixed(2)}/L = ₹${cowAmt.toFixed(2)}\n`;
+      breakdownText += isMarathi
+        ? `गाईचे दूध: ${cleanCowQty} L X ₹${cowRate.toFixed(2)}/L = ₹${cowAmt.toFixed(2)}\n`
+        : `Cow Milk: ${cleanCowQty} L X ₹${cowRate.toFixed(2)}/L = ₹${cowAmt.toFixed(2)}\n`;
     }
     if (buffaloQty > 0) {
-      breakdownText += `Buffalo Milk: ${cleanBuffaloQty} L X ₹${buffaloRate.toFixed(2)}/L = ₹${buffaloAmt.toFixed(2)}\n`;
+      breakdownText += isMarathi
+        ? `म्शीचे दूध: ${cleanBuffaloQty} L X ₹${buffaloRate.toFixed(2)}/L = ₹${buffaloAmt.toFixed(2)}\n`
+        : `Buffalo Milk: ${cleanBuffaloQty} L X ₹${buffaloRate.toFixed(2)}/L = ₹${buffaloAmt.toFixed(2)}\n`;
     }
     if (mixedQty > 0) {
-      breakdownText += `Mixed Milk: ${cleanMixedQty} L X ₹${mixedRate.toFixed(2)}/L = ₹${mixedAmt.toFixed(2)}\n`;
+      breakdownText += isMarathi
+        ? `मिश्र दूध: ${cleanMixedQty} L X ₹${mixedRate.toFixed(2)}/L = ₹${mixedAmt.toFixed(2)}\n`
+        : `Mixed Milk: ${cleanMixedQty} L X ₹${mixedRate.toFixed(2)}/L = ₹${mixedAmt.toFixed(2)}\n`;
     }
 
     if (!breakdownText) {
-      breakdownText = `Milk Qty: ${cleanDisplayQty} L\nAvg Rate: ₹${avgRate.toFixed(2)}/L\n`;
+      breakdownText = isMarathi
+        ? `दूध प्रमाण: ${cleanDisplayQty} L\nसरासरी दर: ₹${avgRate.toFixed(2)}/L\n`
+        : `Milk Qty: ${cleanDisplayQty} L\nAvg Rate: ₹${avgRate.toFixed(2)}/L\n`;
     }
 
     let paymentText = '';
     if (bill.paid_amount > 0) {
-      paymentText = `Paid in Cycle: -₹${bill.paid_amount.toFixed(2)}\n`;
+      paymentText = isMarathi
+        ? `जमा रक्कम: -₹${bill.paid_amount.toFixed(2)}\n`
+        : `Paid in Cycle: -₹${bill.paid_amount.toFixed(2)}\n`;
     } else if (bill.paid_amount < 0) {
-      paymentText = `Credit Refunded: +₹${Math.abs(bill.paid_amount).toFixed(2)}\n`;
+      paymentText = isMarathi
+        ? `परत जमा (क्रेडिट): +₹${Math.abs(bill.paid_amount).toFixed(2)}\n`
+        : `Credit Refunded: +₹${Math.abs(bill.paid_amount).toFixed(2)}\n`;
     }
 
     const netVal = (bill.balance_forward || 0) + displayAmt - bill.paid_amount;
-    const netPayableText = netVal < 0
-      ? `*Overpaid (Credit): ₹${Math.abs(netVal).toFixed(2)}*`
-      : `*Net Payable Dues: ₹${netVal.toFixed(2)}*`;
+    
+    let netPayableText = '';
+    if (netVal < 0) {
+      netPayableText = isMarathi
+        ? `*जास्तीचे जमा (क्रेडिट): ₹${Math.abs(netVal).toFixed(2)}*`
+        : `*Overpaid (Credit): ₹${Math.abs(netVal).toFixed(2)}*`;
+    } else {
+      netPayableText = isMarathi
+        ? `*एकूण देय रक्कम: ₹${netVal.toFixed(2)}*`
+        : `*Net Payable Dues: ₹${netVal.toFixed(2)}*`;
+    }
+
+    if (isMarathi) {
+      const marathiBizThankYou = bizThankYou === 'Please clear the dues. Thank you!'
+        ? 'कृपया थकबाकी जमा करा. धन्यवाद!'
+        : bizThankYou;
+      
+      const marathiGreeting = bizGreeting === 'Hello' ? 'नमस्कार' : bizGreeting;
+      
+      return `${marathiGreeting} ${bill.customer_name},\n\n` +
+        `*${bizName.toUpperCase()} इनव्हॉइस*\n` +
+        `---------------------------------\n` +
+        `इनव्हॉइस क्र: ${bill.bill_number}\n` +
+        `ग्राहक: ${bill.customer_name}\n` +
+        `बिलिंग कालावधी: ${bill.from_date} ते ${bill.to_date}\n` +
+        `---------------------------------\n` +
+        breakdownText +
+        `चालू बिल: ₹${displayAmt.toFixed(2)}\n` +
+        `मागील थकबाकी: ₹${(bill.balance_forward || 0).toFixed(2)}\n` +
+        paymentText +
+        `---------------------------------\n` +
+        netPayableText +
+        `\n---------------------------------\n` +
+        `${marathiBizThankYou}`;
+    }
 
     return `${bizGreeting} ${bill.customer_name},\n\n` +
       `*${bizName.toUpperCase()} INVOICE*\n` +

@@ -30,10 +30,11 @@ export default function CustomersPage() {
   const [search, setSearch] = useState('');
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
-  const [milkType, setMilkType] = useState<MilkType>('cow');
+  const [milkType, setMilkType] = useState<MilkType>('both');
   const [rate, setRate] = useState(45);
   const [rateCow, setRateCow] = useState(45);
   const [rateBuffalo, setRateBuffalo] = useState(60);
+  const [messageLanguage, setMessageLanguage] = useState<'english' | 'marathi'>('english');
   const [isSaving, setIsSaving] = useState(false);
 
   // Load default rates from settings on mount
@@ -67,6 +68,7 @@ export default function CustomersPage() {
         rateCow: milkType === 'both' ? rateCow : rate,
         rateBuffalo: milkType === 'both' ? rateBuffalo : rate,
         isActive: true,
+        messageLanguage,
       });
       toast.success(`✓ Customer "${name.trim()}" added!`);
       setName('');
@@ -74,7 +76,8 @@ export default function CustomersPage() {
       setRate(45);
       setRateCow(45);
       setRateBuffalo(60);
-      setMilkType('cow');
+      setMilkType('both');
+      setMessageLanguage('english');
     } catch (err: any) {
       toast.error(err.message || 'Failed to add customer. Please try again.');
     } finally {
@@ -230,6 +233,19 @@ export default function CustomersPage() {
                   disabled={isSaving}
                 />
               )}
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Message Language</label>
+                <select
+                  className="w-full px-3 py-2.5 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 dark:text-slate-100"
+                  value={messageLanguage}
+                  onChange={e => setMessageLanguage(e.target.value as any)}
+                  disabled={isSaving}
+                >
+                  <option value="english">English (Default)</option>
+                  <option value="marathi">Marathi (मराठी)</option>
+                </select>
+              </div>
 
               <Button type="submit" className="w-full gap-2 mt-2" disabled={isSaving}>
                 <UserPlus className="w-4 h-4" />

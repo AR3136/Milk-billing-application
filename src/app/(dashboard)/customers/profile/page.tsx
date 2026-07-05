@@ -37,6 +37,7 @@ function CustomerDetailContent() {
   const [editRateCow, setEditRateCow] = useState(45);
   const [editRateBuffalo, setEditRateBuffalo] = useState(60);
   const [editIsActive, setEditIsActive] = useState(true);
+  const [editMessageLanguage, setEditMessageLanguage] = useState<'english' | 'marathi'>('english');
   const [isSavingEdit, setIsSavingEdit] = useState(false);
 
   // Filter entries
@@ -131,6 +132,7 @@ function CustomerDetailContent() {
         rateCow: editMilkType === 'both' ? Number(editRateCow) : Number(editRate),
         rateBuffalo: editMilkType === 'both' ? Number(editRateBuffalo) : Number(editRate),
         isActive: editIsActive,
+        messageLanguage: editMessageLanguage,
       });
       toast.success('✓ Customer details updated successfully!');
       setShowEditModal(false);
@@ -215,6 +217,7 @@ function CustomerDetailContent() {
                     setEditRateCow(customer.rateCow);
                     setEditRateBuffalo(customer.rateBuffalo);
                     setEditIsActive(customer.isActive);
+                    setEditMessageLanguage(customer.messageLanguage || 'english');
                     setShowEditModal(true);
                   }} 
                   className="gap-1.5 py-1.5 px-3 text-[10px] font-bold rounded-xl"
@@ -235,6 +238,13 @@ function CustomerDetailContent() {
                   <div>
                     <p className="font-semibold text-slate-500">Phone Number</p>
                     <p className="text-slate-800 dark:text-slate-200 mt-0.5">{customer.phone}</p>
+                  </div>
+                </div>
+                <div className="flex gap-2.5 items-start">
+                  <Calendar className="w-4 h-4 text-slate-500 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-semibold text-slate-500">Message Language</p>
+                    <p className="text-slate-800 dark:text-slate-200 mt-0.5 capitalize font-medium">{customer.messageLanguage || 'english'}</p>
                   </div>
                 </div>
                 <div className="flex gap-2.5 items-start">
@@ -525,6 +535,18 @@ function CustomerDetailContent() {
                     />
                   </div>
                 )}
+
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-slate-500">Message Language</label>
+                  <select 
+                    className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 dark:text-slate-150"
+                    value={editMessageLanguage}
+                    onChange={e => setEditMessageLanguage(e.target.value as any)}
+                  >
+                    <option value="english">English (Default)</option>
+                    <option value="marathi">Marathi (मराठी)</option>
+                  </select>
+                </div>
 
                 <div className="flex justify-between items-center pt-2">
                   <div>

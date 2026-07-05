@@ -14,6 +14,7 @@ export interface Customer {
   rate: number;   // default/display rate (used for non-both types)
   balance: number;
   isActive: boolean;
+  messageLanguage?: 'english' | 'marathi';
 }
 
 export interface MilkEntry {
@@ -154,6 +155,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         rateBuffalo: Number(c.rate_buffalo ?? c.rate_per_liter),
         balance: 0,
         isActive: c.is_active,
+        messageLanguage: c.message_language || 'english',
       }));
 
       const { data: dbEntries, error: entryError } = await supabase
@@ -277,6 +279,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         rate_buffalo: c.rateBuffalo,
         default_quantity: 5.0,
         is_active: c.isActive,
+        message_language: c.messageLanguage || 'english',
       }])
       .select()
       .single();
@@ -501,6 +504,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         rate_cow: updates.rateCow,
         rate_buffalo: updates.rateBuffalo,
         is_active: updates.isActive,
+        message_language: updates.messageLanguage,
       })
       .eq('id', id);
 
