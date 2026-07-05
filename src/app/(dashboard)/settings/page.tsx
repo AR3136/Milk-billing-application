@@ -56,12 +56,12 @@ export default function SettingsPage() {
   }, []);
 
   const handleSaveGeneral = async () => {
-    localStorage.setItem('business_name', businessName);
-    localStorage.setItem('business_phone', helpline);
-    localStorage.setItem('business_address', address);
-    localStorage.setItem('rate_cow', cowRate);
-    localStorage.setItem('rate_buffalo', buffaloRate);
-    localStorage.setItem('rate_mixed', mixedRate);
+    localStorage.setItem('business_name', businessName.trim());
+    localStorage.setItem('business_phone', helpline.trim());
+    localStorage.setItem('business_address', address.trim());
+    localStorage.setItem('rate_cow', cowRate.trim());
+    localStorage.setItem('rate_buffalo', buffaloRate.trim());
+    localStorage.setItem('rate_mixed', mixedRate.trim());
     
     try {
       await updateAllCustomerRates(Number(cowRate), Number(buffaloRate), Number(mixedRate));
@@ -72,9 +72,9 @@ export default function SettingsPage() {
   };
 
   const handleSaveTemplates = () => {
-    localStorage.setItem('whatsapp_greeting', whatsappGreeting);
-    localStorage.setItem('whatsapp_thankyou', whatsappThankyou);
-    localStorage.setItem('whatsapp_no_milk', whatsappNoMilk);
+    localStorage.setItem('whatsapp_greeting', whatsappGreeting.trim());
+    localStorage.setItem('whatsapp_thankyou', whatsappThankyou.trim());
+    localStorage.setItem('whatsapp_no_milk', whatsappNoMilk.trim());
     toast.success('WhatsApp templates updated successfully!');
   };
 

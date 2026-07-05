@@ -194,7 +194,7 @@ export default function MilkEntryPage() {
       toast.error('Customer has no phone number.');
       return;
     }
-    const businessName = localStorage.getItem('business_name') || 'Ganga Dairy Farm';
+    const businessName = (localStorage.getItem('business_name') || 'Ganga Dairy Farm').trim();
     const msg = localStorage.getItem('whatsapp_no_milk') || 'You did not take milk today.';
     const greeting = localStorage.getItem('whatsapp_greeting') || 'Hello';
     

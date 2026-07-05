@@ -29,10 +29,10 @@ export const BillInvoiceView: React.FC<BillInvoiceViewProps> = ({ bill, onClose 
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      setBizName(localStorage.getItem('business_name') || 'Ganga Dairy Farm');
-      setBizAddress(localStorage.getItem('business_address') || 'Ganga Chowk, Sector-4, Pune');
-      setBizGreeting(localStorage.getItem('whatsapp_greeting') || 'Hello');
-      setBizThankYou(localStorage.getItem('whatsapp_thankyou') || 'Please clear the dues. Thank you!');
+      setBizName((localStorage.getItem('business_name') || 'Ganga Dairy Farm').trim());
+      setBizAddress((localStorage.getItem('business_address') || 'Ganga Chowk, Sector-4, Pune').trim());
+      setBizGreeting((localStorage.getItem('whatsapp_greeting') || 'Hello').trim());
+      setBizThankYou((localStorage.getItem('whatsapp_thankyou') || 'Please clear the dues. Thank you!').trim());
     }
   }, []);
 
