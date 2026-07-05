@@ -40,20 +40,20 @@ export const BillInvoiceView: React.FC<BillInvoiceViewProps> = ({ bill, onClose 
   const mixedEntries = cycleEntries.filter(e => e.milkType !== 'cow' && e.milkType !== 'buffalo');
 
   const cowQty = cowEntries.reduce((sum, e) => sum + e.quantity, 0);
-  const cowAmt = cowEntries.reduce((sum, e) => sum + e.amount, 0);
-  const cowRate = matchedCust ? (matchedCust.milkType === 'both' ? matchedCust.rateCow : matchedCust.rate) : (cowQty > 0 ? (cowAmt / cowQty) : 0);
+  const cowRate = matchedCust ? (matchedCust.milkType === 'both' ? matchedCust.rateCow : matchedCust.rate) : 0;
+  const cowAmt = Math.ceil(cowQty * cowRate);
 
   const buffaloQty = buffaloEntries.reduce((sum, e) => sum + e.quantity, 0);
-  const buffaloAmt = buffaloEntries.reduce((sum, e) => sum + e.amount, 0);
-  const buffaloRate = matchedCust ? (matchedCust.milkType === 'both' ? matchedCust.rateBuffalo : matchedCust.rate) : (buffaloQty > 0 ? (buffaloAmt / buffaloQty) : 0);
+  const buffaloRate = matchedCust ? (matchedCust.milkType === 'both' ? matchedCust.rateBuffalo : matchedCust.rate) : 0;
+  const buffaloAmt = Math.ceil(buffaloQty * buffaloRate);
 
   const mixedQty = mixedEntries.reduce((sum, e) => sum + e.quantity, 0);
-  const mixedAmt = mixedEntries.reduce((sum, e) => sum + e.amount, 0);
-  const mixedRate = matchedCust?.rate || (mixedQty > 0 ? (mixedAmt / mixedQty) : 0);
+  const mixedRate = matchedCust?.rate || 0;
+  const mixedAmt = Math.ceil(mixedQty * mixedRate);
 
   // Use computed cycle values, with fallback to bill defaults if entries are not yet synced/empty
   const displayQty = cycleEntries.length > 0 ? cycleEntries.reduce((sum, e) => sum + e.quantity, 0) : bill.total_quantity;
-  const displayAmt = cycleEntries.length > 0 ? cycleEntries.reduce((sum, e) => sum + e.amount, 0) : bill.total_amount;
+  const displayAmt = cycleEntries.length > 0 ? Math.ceil(cowAmt + buffaloAmt + mixedAmt) : bill.total_amount;
   const avgRate = matchedCust?.rate || (displayQty > 0 ? (displayAmt / displayQty) : 0);
 
   // Clean quantities to avoid floating point issues (e.g. 0.8500000000000001 L)
