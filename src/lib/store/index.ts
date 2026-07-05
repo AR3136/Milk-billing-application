@@ -23,10 +23,11 @@ export interface MilkEntry {
   customerName: string;
   date: string;
   shift: 'morning' | 'evening';
-  quantity: number;
-  rate: number;
+  quantity: number | null;
+  rate: number | null;
   amount: number;
   milkType: MilkType;
+  pricingMethod: 'quantity' | 'amount';
 }
 
 export interface MilkEntryFormData {
@@ -34,10 +35,11 @@ export interface MilkEntryFormData {
   customerName: string;
   date: string;
   shift: 'morning' | 'evening';
-  quantity: number;
-  rate: number;
+  quantity: number | null;
+  rate: number | null;
   milkType: MilkType;
-  amount?: number;
+  amount: number;
+  pricingMethod: 'quantity' | 'amount';
 }
 
 export interface Payment {
@@ -169,16 +171,18 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
       const entriesList: MilkEntry[] = (dbEntries ?? []).map(e => {
         const cust = customersList.find(c => c.id === e.customer_id);
+        const pm: 'quantity' | 'amount' = e.pricing_method === 'amount' ? 'amount' : 'quantity';
         return {
           id: e.id,
           customerId: e.customer_id,
           customerName: cust?.name ?? 'Unknown',
           date: e.date,
           shift: e.shift as any,
-          quantity: Number(e.quantity),
-          rate: Number(e.rate_applied),
+          quantity: pm === 'amount' ? null : Number(e.quantity),
+          rate: pm === 'amount' ? null : Number(e.rate_applied),
           amount: Math.round(Number(e.amount)),
           milkType: (e.milk_type ?? cust?.milkType ?? 'cow') as MilkType,
+          pricingMethod: pm,
         };
       });
 
@@ -223,20 +227,8 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
       const updatedCustomers = customersList.map(c => {
         const cEntries = entriesList.filter(e => e.customerId === c.id);
-        let totalMilk = 0;
-        if (c.milkType === 'both') {
-          const cowQty = cEntries.filter(e => e.milkType === 'cow').reduce((sum, e) => sum + e.quantity, 0);
-          const buffaloQty = cEntries.filter(e => e.milkType === 'buffalo').reduce((sum, e) => sum + e.quantity, 0);
-          const mixedQty = cEntries.filter(e => e.milkType !== 'cow' && e.milkType !== 'buffalo').reduce((sum, e) => sum + e.quantity, 0);
-          totalMilk = Math.ceil(
-            (cowQty * (c.rateCow || 0)) + 
-            (buffaloQty * (c.rateBuffalo || 0)) + 
-            (mixedQty * (c.rate || 0))
-          );
-        } else {
-          const totalQty = cEntries.reduce((sum, e) => sum + e.quantity, 0);
-          totalMilk = Math.ceil(totalQty * (c.rate || 0));
-        }
+        // Always use the stored `amount` field — works correctly for both 'quantity' and 'amount' pricing methods
+        const totalMilk = cEntries.reduce((sum, e) => sum + e.amount, 0);
 
         const totalPaid = paymentsList
           .filter(p => p.customerId === c.id)
@@ -308,8 +300,6 @@ export const useAppStore = create<AppStore>((set, get) => ({
     const isValidUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(e.customerId);
     if (!isValidUUID) throw new Error('Invalid customer selected. Please pick a valid customer.');
 
-    const calculatedAmount = e.amount !== undefined ? e.amount : Math.round(e.quantity * e.rate);
-
     const { data: inserted, error } = await supabase
       .from('milk_entries')
       .insert([{
@@ -317,26 +307,30 @@ export const useAppStore = create<AppStore>((set, get) => ({
         user_id: user.id,
         date: e.date,
         shift: e.shift,
-        quantity: e.quantity,
-        rate_applied: e.rate,
-        milk_type: e.milkType
+        quantity: e.pricingMethod === 'amount' ? null : e.quantity,
+        rate_applied: e.pricingMethod === 'amount' ? null : e.rate,
+        amount: e.amount,
+        milk_type: e.milkType,
+        pricing_method: e.pricingMethod,
       }])
       .select()
       .single();
 
     if (error) throw new Error(error.message);
 
-    const amount = Math.round(Number(inserted.amount ?? calculatedAmount));
+    const amount = Math.round(Number(inserted.amount ?? e.amount));
+    const pm: 'quantity' | 'amount' = e.pricingMethod;
     const newEntry: MilkEntry = {
       id: inserted.id,
       customerId: inserted.customer_id,
       customerName: e.customerName,
       date: inserted.date,
       shift: inserted.shift as any,
-      quantity: Number(inserted.quantity),
-      rate: Number(inserted.rate_applied),
+      quantity: pm === 'amount' ? null : Number(inserted.quantity),
+      rate: pm === 'amount' ? null : Number(inserted.rate_applied),
       amount,
       milkType: e.milkType,
+      pricingMethod: pm,
     };
 
     set((state) => ({

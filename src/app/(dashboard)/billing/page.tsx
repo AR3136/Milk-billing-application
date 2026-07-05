@@ -33,22 +33,9 @@ export default function BillingPage() {
       e => e.customerId === cust.id && e.date >= startDate && e.date <= endDate
     );
 
-    const totalQuantity = cycleEntries.reduce((sum, e) => sum + e.quantity, 0);
-    
-    // Calculate total yield: sum of total liters per milk type multiplied by rate, rounded up
-    let cycleTotalAmount = 0;
-    if (cust.milkType === 'both') {
-      const cowQty = cycleEntries.filter(e => e.milkType === 'cow').reduce((sum, e) => sum + e.quantity, 0);
-      const buffaloQty = cycleEntries.filter(e => e.milkType === 'buffalo').reduce((sum, e) => sum + e.quantity, 0);
-      const mixedQty = cycleEntries.filter(e => e.milkType !== 'cow' && e.milkType !== 'buffalo').reduce((sum, e) => sum + e.quantity, 0);
-      cycleTotalAmount = Math.ceil(
-        (cowQty * (cust.rateCow || 0)) + 
-        (buffaloQty * (cust.rateBuffalo || 0)) + 
-        (mixedQty * (cust.rate || 0))
-      );
-    } else {
-      cycleTotalAmount = Math.ceil(totalQuantity * (cust.rate || 0));
-    }
+    const totalQuantity = cycleEntries.reduce((sum, e) => sum + (e.quantity ?? 0), 0);
+    // Use stored amount directly — works for both 'quantity' and 'amount' pricing methods
+    const cycleTotalAmount = cycleEntries.reduce((sum, e) => sum + e.amount, 0);
 
     // 2. Fetch payments made during this cycle, deducting credit settlements
     const cyclePaymentsRaw = payments
@@ -61,21 +48,8 @@ export default function BillingPage() {
 
     // 3. Compute balance forward (dues before cycle start date)
     const priorEntries = milkEntries.filter(e => e.customerId === cust.id && e.date < startDate);
-    const priorQuantity = priorEntries.reduce((sum, e) => sum + e.quantity, 0);
-    
-    let priorMilk = 0;
-    if (cust.milkType === 'both') {
-      const cowQty = priorEntries.filter(e => e.milkType === 'cow').reduce((sum, e) => sum + e.quantity, 0);
-      const buffaloQty = priorEntries.filter(e => e.milkType === 'buffalo').reduce((sum, e) => sum + e.quantity, 0);
-      const mixedQty = priorEntries.filter(e => e.milkType !== 'cow' && e.milkType !== 'buffalo').reduce((sum, e) => sum + e.quantity, 0);
-      priorMilk = Math.ceil(
-        (cowQty * (cust.rateCow || 0)) + 
-        (buffaloQty * (cust.rateBuffalo || 0)) + 
-        (mixedQty * (cust.rate || 0))
-      );
-    } else {
-      priorMilk = Math.ceil(priorQuantity * (cust.rate || 0));
-    }
+    // Use stored amount for prior entries (works for both pricing methods)
+    const priorMilk = priorEntries.reduce((sum, e) => sum + e.amount, 0);
 
     const priorPayments = payments.filter(p => p.customerId === cust.id && p.date < startDate);
     const priorPaidRaw = priorPayments.reduce((sum, p) => sum + p.amount, 0);

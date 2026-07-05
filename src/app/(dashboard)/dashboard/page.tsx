@@ -21,7 +21,7 @@ export default function DashboardPage() {
   const activeCustomers = customers.filter(c => c.isActive).length;
   const totalMilkToday = milkEntries
     .filter(e => e.date === today)
-    .reduce((sum, e) => sum + e.quantity, 0);
+    .reduce((sum, e) => sum + (e.quantity ?? 0), 0);
 
   const pendingDues = customers
     .filter(c => c.balance > 0)

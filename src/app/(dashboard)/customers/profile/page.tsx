@@ -97,7 +97,7 @@ function CustomerDetailContent() {
 
   // Daily Average
   const dailyAverage = customerEntries.length > 0 
-    ? (customerEntries.reduce((sum, e) => sum + e.quantity, 0) / customerEntries.length).toFixed(1)
+    ? (customerEntries.reduce((sum, e) => sum + (e.quantity ?? 0), 0) / customerEntries.length).toFixed(1)
     : '0';
 
   // Weekly Total (Last 7 days)
@@ -105,7 +105,7 @@ function CustomerDetailContent() {
   oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
   const weeklyTotal = customerEntries
     .filter(e => new Date(e.date) >= oneWeekAgo)
-    .reduce((sum, e) => sum + e.quantity, 0)
+    .reduce((sum, e) => sum + (e.quantity ?? 0), 0)
     .toFixed(1);
 
   // Monthly Total (Last 30 days)
@@ -113,7 +113,7 @@ function CustomerDetailContent() {
   oneMonthAgo.setDate(oneMonthAgo.getDate() - 30);
   const monthlyTotal = customerEntries
     .filter(e => new Date(e.date) >= oneMonthAgo)
-    .reduce((sum, e) => sum + e.quantity, 0)
+    .reduce((sum, e) => sum + (e.quantity ?? 0), 0)
     .toFixed(1);
 
   const handleSaveEdit = async (e: React.FormEvent) => {
@@ -342,8 +342,18 @@ function CustomerDetailContent() {
                               {e.milkType}
                             </Badge>
                           </td>
-                          <td className="py-2.5 px-3 font-semibold">{e.quantity} L</td>
-                          <td className="py-2.5 px-3 text-right">₹{e.rate}/L</td>
+                          <td className="py-2.5 px-3 font-semibold">
+                            {e.pricingMethod === 'amount'
+                              ? <span className="text-emerald-600 dark:text-emerald-400 text-[10px] font-bold">Direct ₹</span>
+                              : <>{e.quantity} L</>
+                            }
+                          </td>
+                          <td className="py-2.5 px-3 text-right">
+                            {e.pricingMethod === 'amount'
+                              ? <span className="text-slate-400 dark:text-slate-500 italic">—</span>
+                              : <>₹{e.rate}/L</>
+                            }
+                          </td>
                           <td className="py-2.5 px-3 text-right font-bold text-slate-800 dark:text-slate-100">₹{e.amount}</td>
                         </tr>
                       ))
@@ -406,19 +416,19 @@ function CustomerDetailContent() {
       {/* Confirmation Dialog Overlay */}
       {showConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs">
-          <div className="w-full max-w-sm bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-2xl space-y-4">
+          <div className="w-full max-w-sm bg-white rounded-2xl border border-slate-200 p-6 shadow-2xl space-y-4">
             <div className="flex items-center gap-3 text-rose-600">
               <div className="w-10 h-10 bg-rose-50 rounded-xl flex items-center justify-center">
                 <Trash2 className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="font-bold text-slate-800 dark:text-slate-100 text-sm">Delete Customer Profile?</h3>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400">This action cannot be undone.</p>
+                <h3 className="font-bold text-slate-800 text-sm">Delete Customer Profile?</h3>
+                <p className="text-[11px] text-slate-500">This action cannot be undone.</p>
               </div>
             </div>
             
-            <p className="text-xs text-slate-600 dark:text-slate-400">
-              Are you sure you want to permanently delete the profile of <span className="font-bold text-slate-800 dark:text-slate-100">"{customer.name}"</span>?
+            <p className="text-xs text-slate-600">
+              Are you sure you want to permanently delete the profile of <span className="font-bold text-slate-800">"{customer.name}"</span>?
             </p>
 
             <div className="flex gap-2 justify-end pt-2">
@@ -550,7 +560,7 @@ function CustomerDetailContent() {
 
                 <div className="flex justify-between items-center pt-2">
                   <div>
-                    <h5 className="text-xs font-semibold text-slate-700 dark:text-slate-300">Active Status</h5>
+                    <h5 className="text-xs font-semibold text-slate-700 dark:text-slate-350">Active Status</h5>
                     <p className="text-[10px] text-slate-400">Check to allow deliveries</p>
                   </div>
                   <input 
@@ -599,3 +609,4 @@ export default function CustomerDetailPage() {
     </Suspense>
   );
 }
+
