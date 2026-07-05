@@ -35,19 +35,19 @@ export default function BillingPage() {
 
     const totalQuantity = cycleEntries.reduce((sum, e) => sum + e.quantity, 0);
     
-    // Calculate total yield: sum of total liters per milk type multiplied by rate, rounded up
+    // Calculate total yield: sum of total liters per milk type multiplied by rate, rounded down
     let cycleTotalAmount = 0;
     if (cust.milkType === 'both') {
       const cowQty = cycleEntries.filter(e => e.milkType === 'cow').reduce((sum, e) => sum + e.quantity, 0);
       const buffaloQty = cycleEntries.filter(e => e.milkType === 'buffalo').reduce((sum, e) => sum + e.quantity, 0);
       const mixedQty = cycleEntries.filter(e => e.milkType !== 'cow' && e.milkType !== 'buffalo').reduce((sum, e) => sum + e.quantity, 0);
-      cycleTotalAmount = Math.ceil(
+      cycleTotalAmount = Math.floor(
         (cowQty * (cust.rateCow || 0)) + 
         (buffaloQty * (cust.rateBuffalo || 0)) + 
         (mixedQty * (cust.rate || 0))
       );
     } else {
-      cycleTotalAmount = Math.ceil(totalQuantity * (cust.rate || 0));
+      cycleTotalAmount = Math.floor(totalQuantity * (cust.rate || 0));
     }
 
     // 2. Fetch payments made during this cycle, deducting credit settlements
@@ -68,13 +68,13 @@ export default function BillingPage() {
       const cowQty = priorEntries.filter(e => e.milkType === 'cow').reduce((sum, e) => sum + e.quantity, 0);
       const buffaloQty = priorEntries.filter(e => e.milkType === 'buffalo').reduce((sum, e) => sum + e.quantity, 0);
       const mixedQty = priorEntries.filter(e => e.milkType !== 'cow' && e.milkType !== 'buffalo').reduce((sum, e) => sum + e.quantity, 0);
-      priorMilk = Math.ceil(
+      priorMilk = Math.floor(
         (cowQty * (cust.rateCow || 0)) + 
         (buffaloQty * (cust.rateBuffalo || 0)) + 
         (mixedQty * (cust.rate || 0))
       );
     } else {
-      priorMilk = Math.ceil(priorQuantity * (cust.rate || 0));
+      priorMilk = Math.floor(priorQuantity * (cust.rate || 0));
     }
 
     const priorPayments = payments.filter(p => p.customerId === cust.id && p.date < startDate);
