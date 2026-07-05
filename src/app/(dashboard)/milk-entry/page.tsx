@@ -171,18 +171,38 @@ export default function MilkEntryPage() {
     setQuantity((current + amount).toString());
   };
 
+  const [rupeeAmount, setRupeeAmount] = useState<number>(0);
+  const [isSavingRupees, setIsSavingRupees] = useState(false);
+
   const handleQuickAddRupees = (rs: number) => {
-    if (effectiveRate <= 0) {
-      toast.error('Rate is zero. Select customer first.');
+    setRupeeAmount(prev => prev + rs);
+  };
+
+  const handleLogRupeePayment = async () => {
+    if (!customerId || !selectedCust) {
+      toast.error('Please select a customer first.');
       return;
     }
-    const current = Number(quantity) || 0;
-    // Calculate the current base rupees by flooring to strip the ceiling rounding residue
-    const currentRupees = Math.floor(current * effectiveRate);
-    const targetRupees = currentRupees + rs;
-    // Round UP to 2 decimal places to match DB scale NUMERIC(6,2)
-    const newQty = Math.ceil((targetRupees / effectiveRate) * 100) / 100;
-    setQuantity(newQty.toString());
+    if (rupeeAmount <= 0) {
+      toast.error('Please add a rupee amount first.');
+      return;
+    }
+    setIsSavingRupees(true);
+    try {
+      await addPayment({
+        customerId,
+        customerName: selectedCust.name,
+        amount: rupeeAmount,
+        date,
+        method: 'cash',
+      });
+      toast.success(`✓ ₹${rupeeAmount} payment logged for ${selectedCust.name}`);
+      setRupeeAmount(0);
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to log payment.');
+    } finally {
+      setIsSavingRupees(false);
+    }
   };
 
   const handleNoMilkWhatsApp = () => {
@@ -364,6 +384,39 @@ export default function MilkEntryPage() {
                             +₹{val}
                           </button>
                         ))}
+                      </div>
+                      {/* Rupee amount display + log button */}
+                      <div className="flex items-center gap-2 pt-1">
+                        <div className="flex items-center gap-1 flex-1 bg-white dark:bg-slate-900 border border-emerald-200 dark:border-emerald-900/50 rounded-lg px-2 py-1.5">
+                          <span className="text-[10px] text-slate-400">Total:</span>
+                          <input
+                            type="number"
+                            min="0"
+                            value={rupeeAmount || ''}
+                            onChange={e => setRupeeAmount(Number(e.target.value))}
+                            placeholder="0"
+                            className="flex-1 bg-transparent text-sm font-black text-emerald-700 dark:text-emerald-400 focus:outline-none w-16 min-w-0"
+                          />
+                          <span className="text-[10px] text-slate-400">₹</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={handleLogRupeePayment}
+                          disabled={isSavingRupees || rupeeAmount <= 0 || !customerId}
+                          className="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 text-white text-[11px] font-bold rounded-lg transition-colors flex items-center gap-1 whitespace-nowrap"
+                        >
+                          {isSavingRupees ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
+                          Log ₹
+                        </button>
+                        {rupeeAmount > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => setRupeeAmount(0)}
+                            className="text-[10px] text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 px-1"
+                          >
+                            ✕
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>
