@@ -121,7 +121,15 @@ export const BillInvoiceView: React.FC<BillInvoiceViewProps> = ({ bill, onClose 
   const handleWhatsAppShare = () => {
     const text = buildTextInvoice();
     const encodedText = encodeURIComponent(text);
-    window.open(`https://api.whatsapp.com/send?phone=91${phone}&text=${encodedText}`, '_blank');
+    
+    // Strip all non-digit characters to ensure WhatsApp link functions correctly
+    const cleanPhone = phone.replace(/\D/g, '');
+    let formattedPhone = cleanPhone;
+    if (cleanPhone.length === 10) {
+      formattedPhone = '91' + cleanPhone;
+    }
+    
+    window.open(`https://api.whatsapp.com/send?phone=${formattedPhone}&text=${encodedText}`, '_blank');
   };
 
   return (

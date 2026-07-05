@@ -83,6 +83,7 @@ interface AppStore {
   deleteCustomer: (id: string) => Promise<void>;
   deleteMilkEntry: (id: string) => Promise<void>;
   updateAllCustomerRates: (cowRate: number, buffaloRate: number, mixedRate: number) => Promise<void>;
+  updateCustomer: (id: string, updates: Partial<Omit<Customer, 'id' | 'balance'>>) => Promise<void>;
   deleteUserAccount: () => Promise<void>;
 }
 
@@ -486,6 +487,25 @@ export const useAppStore = create<AppStore>((set, get) => ({
     set((state) => ({
       customers: state.customers.filter(c => c.id !== id)
     }));
+  },
+
+  updateCustomer: async (id, updates) => {
+    const supabase = createClient();
+    const { error } = await supabase
+      .from('customers')
+      .update({
+        name: updates.name,
+        phone: updates.phone,
+        milk_type: updates.milkType,
+        rate: updates.rate,
+        rate_cow: updates.rateCow,
+        rate_buffalo: updates.rateBuffalo,
+        is_active: updates.isActive,
+      })
+      .eq('id', id);
+
+    if (error) throw new Error(error.message);
+    await get().fetchData();
   },
 
   updateAllCustomerRates: async (cowRate, buffaloRate, mixedRate) => {

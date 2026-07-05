@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { DashboardLayoutShell } from '@/components/layout';
 import { Card, Badge, Button } from '@/components/ui';
 import { useAppStore } from '@/lib/store';
-import { ArrowLeft, Calendar, FileText, Milk, Phone, MapPin, User, ArrowUpRight, Trash2, AlertCircle, Loader2 } from 'lucide-react';
+import { ArrowLeft, Calendar, FileText, Milk, Phone, MapPin, User, ArrowUpRight, Trash2, AlertCircle, Loader2, Edit } from 'lucide-react';
 import { toast } from 'sonner';
 
 function CustomerDetailContent() {
@@ -26,6 +26,18 @@ function CustomerDetailContent() {
   const [isCheckingDues, setIsCheckingDues] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+
+  // Edit fields state
+  const updateCustomer = useAppStore((state) => state.updateCustomer);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editName, setEditName] = useState('');
+  const [editPhone, setEditPhone] = useState('');
+  const [editMilkType, setEditMilkType] = useState<'cow' | 'buffalo' | 'mixed' | 'both'>('cow');
+  const [editRate, setEditRate] = useState(45);
+  const [editRateCow, setEditRateCow] = useState(45);
+  const [editRateBuffalo, setEditRateBuffalo] = useState(60);
+  const [editIsActive, setEditIsActive] = useState(true);
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
 
   // Filter entries
   const customerEntries = milkEntries.filter(e => e.customerId === id);
@@ -103,6 +115,32 @@ function CustomerDetailContent() {
     .reduce((sum, e) => sum + e.quantity, 0)
     .toFixed(1);
 
+  const handleSaveEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editName.trim() || !editPhone.trim()) {
+      toast.error('Name and phone are required.');
+      return;
+    }
+    setIsSavingEdit(true);
+    try {
+      await updateCustomer(customer.id, {
+        name: editName.trim(),
+        phone: editPhone.trim(),
+        milkType: editMilkType,
+        rate: editMilkType === 'both' ? 0 : Number(editRate),
+        rateCow: editMilkType === 'both' ? Number(editRateCow) : Number(editRate),
+        rateBuffalo: editMilkType === 'both' ? Number(editRateBuffalo) : Number(editRate),
+        isActive: editIsActive,
+      });
+      toast.success('✓ Customer details updated successfully!');
+      setShowEditModal(false);
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to update customer details.');
+    } finally {
+      setIsSavingEdit(false);
+    }
+  };
+
   const handleDelete = async () => {
     setIsDeleting(true);
     try {
@@ -118,23 +156,19 @@ function CustomerDetailContent() {
   };
 
   return (
-    <DashboardLayoutShell title="Customer Analytics & Profile">
+    <DashboardLayoutShell title={`Profile: ${customer.name}`}>
       <div className="space-y-6">
         
-        {/* Back navigation header */}
-        <div className="flex items-center gap-3">
+        {/* Back navigation button */}
+        <div className="no-print">
           <Button 
             variant="outline" 
             size="sm" 
-            onClick={() => router.push('/customers')} 
-            className="p-2 rounded-xl"
+            onClick={() => router.push('/customers')}
+            className="gap-1.5 py-1.5 px-3.5 text-xs font-semibold rounded-xl"
           >
-            <ArrowLeft className="w-4 h-4" />
+            <ArrowLeft className="w-3.5 h-3.5" /> Back to Directory
           </Button>
-          <div>
-            <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100">{customer.name}</h2>
-            <p className="text-xs text-slate-500">Overview of yields, collections, and dues ledgers</p>
-          </div>
         </div>
 
         {/* Top summary row: Metrics */}
@@ -164,7 +198,30 @@ function CustomerDetailContent() {
           
           {/* Customer info card */}
           <div className="space-y-4">
-            <Card title="Member Account Details">
+            <Card>
+              <div className="flex justify-between items-center mb-4 border-b border-slate-50 dark:border-slate-800/60 pb-2">
+                <div>
+                  <h3 className="text-sm font-bold text-slate-850 dark:text-slate-100">Member Account Details</h3>
+                  <p className="text-[10px] text-slate-500">Contact config & rates</p>
+                </div>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => {
+                    setEditName(customer.name);
+                    setEditPhone(customer.phone);
+                    setEditMilkType(customer.milkType);
+                    setEditRate(customer.rate);
+                    setEditRateCow(customer.rateCow);
+                    setEditRateBuffalo(customer.rateBuffalo);
+                    setEditIsActive(customer.isActive);
+                    setShowEditModal(true);
+                  }} 
+                  className="gap-1.5 py-1.5 px-3 text-[10px] font-bold rounded-xl"
+                >
+                  <Edit className="w-3 h-3" /> Edit
+                </Button>
+              </div>
               <div className="space-y-4 text-xs pt-2">
                 <div className="flex gap-2.5 items-start">
                   <User className="w-4 h-4 text-slate-500 shrink-0 mt-0.5" />
@@ -375,6 +432,137 @@ function CustomerDetailContent() {
                 Yes, Delete
               </Button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Member Details Modal */}
+      {showEditModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs overflow-y-auto">
+          <div className="w-full max-w-md bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-2xl space-y-4 animate-scale-in my-8">
+            <div className="flex items-center gap-3 border-b border-slate-100 dark:border-slate-800/80 pb-3">
+              <div className="w-9 h-9 bg-blue-50 dark:bg-blue-950/30 rounded-xl flex items-center justify-center shrink-0">
+                <Edit className="w-4 h-4 text-blue-600" />
+              </div>
+              <div>
+                <h3 className="font-bold text-slate-800 dark:text-slate-150 text-sm">Edit Member Details</h3>
+                <p className="text-[10px] text-slate-500 font-semibold uppercase tracking-wide">Update customer details & pricing</p>
+              </div>
+            </div>
+
+            <form onSubmit={handleSaveEdit} className="space-y-4">
+              <div className="space-y-3.5">
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-slate-500">Contact Name</label>
+                  <input 
+                    type="text" 
+                    className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 dark:text-slate-150"
+                    placeholder="e.g. Ramesh Kumar"
+                    value={editName}
+                    onChange={e => setEditName(e.target.value)}
+                    required
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-slate-500">Phone Number</label>
+                  <input 
+                    type="text" 
+                    className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 dark:text-slate-150"
+                    placeholder="e.g. +91 98765 43210"
+                    value={editPhone}
+                    onChange={e => setEditPhone(e.target.value)}
+                    required
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-slate-500">Milk Type</label>
+                  <select 
+                    className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 dark:text-slate-150"
+                    value={editMilkType}
+                    onChange={e => setEditMilkType(e.target.value as any)}
+                  >
+                    <option value="cow">Cow</option>
+                    <option value="buffalo">Buffalo</option>
+                    <option value="mixed">Mixed</option>
+                    <option value="both">Both (Cow + Buffalo)</option>
+                  </select>
+                </div>
+
+                {editMilkType === 'both' ? (
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-semibold text-slate-500">Cow Rate (₹/L)</label>
+                      <input 
+                        type="number" 
+                        className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 dark:text-slate-150"
+                        value={editRateCow}
+                        onChange={e => setEditRateCow(Number(e.target.value))}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-semibold text-slate-500">Buffalo Rate (₹/L)</label>
+                      <input 
+                        type="number" 
+                        className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 dark:text-slate-150"
+                        value={editRateBuffalo}
+                        onChange={e => setEditRateBuffalo(Number(e.target.value))}
+                        required
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-slate-500">Milk Rate (₹/L)</label>
+                    <input 
+                      type="number" 
+                      className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 dark:text-slate-150"
+                      value={editRate}
+                      onChange={e => setEditRate(Number(e.target.value))}
+                      required
+                    />
+                  </div>
+                )}
+
+                <div className="flex justify-between items-center pt-2">
+                  <div>
+                    <h5 className="text-xs font-semibold text-slate-700 dark:text-slate-350">Active Status</h5>
+                    <p className="text-[10px] text-slate-400">Check to allow deliveries</p>
+                  </div>
+                  <input 
+                    type="checkbox" 
+                    className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 cursor-pointer"
+                    checked={editIsActive}
+                    onChange={e => setEditIsActive(e.target.checked)}
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-2 justify-end pt-3 border-t border-slate-100 dark:border-slate-800/80">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  type="button"
+                  onClick={() => setShowEditModal(false)}
+                  disabled={isSavingEdit}
+                  className="px-4 py-2 text-xs font-semibold rounded-xl dark:border-slate-700"
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  variant="primary" 
+                  size="sm" 
+                  type="submit"
+                  disabled={isSavingEdit}
+                  className="px-4 py-2 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-xl flex items-center gap-1.5 cursor-pointer"
+                >
+                  {isSavingEdit && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  Save Details
+                </Button>
+              </div>
+            </form>
           </div>
         </div>
       )}
