@@ -47,9 +47,7 @@ export const Sidebar: React.FC = () => {
       <aside className="hidden md:flex flex-col w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 h-screen sticky top-0">
         <div className="h-16 flex items-center px-6 border-b border-slate-200 dark:border-slate-800">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-blue-600 to-emerald-500 flex items-center justify-center text-white font-bold text-lg shadow-md shadow-blue-200 dark:shadow-none">
-              M
-            </div>
+            <img src="/logo.png" alt="Logo" className="w-8 h-8 rounded-lg object-contain shadow-md shadow-blue-200 dark:shadow-none" />
             <span className="font-bold text-slate-800 dark:text-slate-100 tracking-tight text-base">Milk Billing System</span>
           </div>
         </div>
@@ -106,9 +104,7 @@ export const Sidebar: React.FC = () => {
         >
           <div className="h-16 flex items-center justify-between px-6 border-b border-slate-200 dark:border-slate-800">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-blue-600 to-emerald-500 flex items-center justify-center text-white font-bold text-lg shadow-md">
-                M
-              </div>
+              <img src="/logo.png" alt="Logo" className="w-8 h-8 rounded-lg object-contain shadow-md" />
               <span className="font-bold text-slate-800 dark:text-slate-100 tracking-tight text-sm">Milk Billing System</span>
             </div>
             <button 

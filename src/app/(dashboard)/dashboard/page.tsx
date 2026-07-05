@@ -27,6 +27,12 @@ export default function DashboardPage() {
     .filter(c => c.balance > 0)
     .reduce((sum, c) => sum + c.balance, 0);
 
+  const totalCollections = milkEntries.reduce((sum, e) => sum + e.amount, 0);
+  const totalPayments = payments.reduce((sum, p) => sum + p.amount, 0);
+  const collectionRate = totalCollections > 0 
+    ? (Math.min(100, (totalPayments / totalCollections) * 100)).toFixed(1) + '%'
+    : '100%';
+
   return (
     <DashboardLayoutShell title="Overview Dashboard">
       <div className="space-y-6">
@@ -118,8 +124,8 @@ export default function DashboardPage() {
           />
           <StatCard 
             title="Collection Rate" 
-            value="94.2%" 
-            subValue="Monthly Average"
+            value={collectionRate} 
+            subValue="Paid vs Total Milk"
             icon={<TrendingUp className="w-5 h-5 text-amber-500" />}
             trend={{ type: 'neutral', value: 'Stable' }}
             color="amber"
