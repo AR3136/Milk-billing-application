@@ -30,6 +30,7 @@ export default function MilkEntryPage() {
   const [entryMilkType, setEntryMilkType] = useState<'cow' | 'buffalo'>('cow');
   const [isSaving, setIsSaving] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [paymentAmount, setPaymentAmount] = useState<number>(0);
 
   // Deletion States
   const [entryToDelete, setEntryToDelete] = useState<string | null>(null);
@@ -111,6 +112,8 @@ export default function MilkEntryPage() {
       toast.error('Selected customer not found. Please refresh.');
       return;
     }
+    const calculatedAmount = Math.round(Number(quantity) * effectiveRate);
+    setPaymentAmount(calculatedAmount);
     setShowPaymentModal(true);
   };
 
@@ -131,16 +134,16 @@ export default function MilkEntryPage() {
         amount: calculatedAmount,
       });
 
-      // 2. Log Payment
+      // 2. Log Payment using the adjusted paymentAmount
       await addPayment({
         customerId,
         customerName: selectedCust!.name,
-        amount: calculatedAmount,
+        amount: paymentAmount,
         date,
         method,
       });
 
-      toast.success(`✓ Logged & Paid ₹${calculatedAmount} via ${method.toUpperCase()} for ${selectedCust!.name}`);
+      toast.success(`✓ Logged & Paid ₹${paymentAmount} via ${method.toUpperCase()} for ${selectedCust!.name}`);
       setQuantity('');
     } catch (err: any) {
       toast.error(err.message || 'Failed to process spot payment. Please try again.');
@@ -492,38 +495,99 @@ export default function MilkEntryPage() {
       {/* Payment Mode Selection Modal Overlay */}
       {showPaymentModal && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-slate-950/65 backdrop-blur-xs">
-          <div className="w-full max-w-sm bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-2xl space-y-5">
+          <div className="w-full max-w-sm bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-2xl space-y-5 animate-slide-up">
             <div className="text-center space-y-1">
-              <h3 className="font-extrabold text-slate-850 dark:text-slate-100 text-base">Select Payment Mode</h3>
+              <h3 className="font-extrabold text-slate-850 dark:text-slate-100 text-sm uppercase tracking-wide">Adjust Spot Payment</h3>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Process spot payment of <span className="font-black text-emerald-600 dark:text-emerald-450">₹{Math.round(Number(quantity) * effectiveRate)}</span> for {selectedCust?.name}
+                Adjust how much {selectedCust?.name} paid today
               </p>
             </div>
-            
-            <div className="grid grid-cols-2 gap-3.5">
+
+            {/* Adjustable Price Display */}
+            <div className="flex items-center justify-center gap-4 py-2 border-y border-slate-100 dark:border-slate-800">
+              <button 
+                type="button"
+                onClick={() => setPaymentAmount(prev => Math.max(0, prev - 1))}
+                className="w-10 h-10 rounded-xl border border-slate-250 dark:border-slate-700 flex items-center justify-center font-extrabold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 text-lg transition-colors cursor-pointer"
+              >
+                -
+              </button>
+              <div className="text-center min-w-[100px]">
+                <span className="text-2xl font-black text-slate-800 dark:text-slate-100">₹{paymentAmount}</span>
+                <p className="text-[10px] text-slate-400 dark:text-slate-550 mt-0.5">
+                  Milk cost: ₹{Math.round(Number(quantity) * effectiveRate)}
+                </p>
+              </div>
+              <button 
+                type="button"
+                onClick={() => setPaymentAmount(prev => prev + 1)}
+                className="w-10 h-10 rounded-xl border border-slate-250 dark:border-slate-700 flex items-center justify-center font-extrabold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 text-lg transition-colors cursor-pointer"
+              >
+                +
+              </button>
+            </div>
+
+            {/* Quick Adjustment buttons */}
+            <div className="space-y-3.5">
+              <div className="flex flex-col gap-2">
+                <div className="flex justify-center gap-1.5 items-center">
+                  <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider min-w-[60px]">Pay Extra:</span>
+                  <div className="flex gap-1.5">
+                    {[2, 3, 5, 10].map(val => (
+                      <button
+                        key={`add-pay-${val}`}
+                        type="button"
+                        onClick={() => setPaymentAmount(prev => prev + val)}
+                        className="px-2.5 py-1 bg-emerald-50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-400 text-xs font-black rounded-lg border border-emerald-100 dark:border-emerald-900/50 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-all cursor-pointer"
+                      >
+                        +₹{val}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="flex justify-center gap-1.5 items-center">
+                  <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider min-w-[60px]">Pay Less:</span>
+                  <div className="flex gap-1.5">
+                    {[2, 3, 5, 10].map(val => (
+                      <button
+                        key={`sub-pay-${val}`}
+                        type="button"
+                        onClick={() => setPaymentAmount(prev => Math.max(0, prev - val))}
+                        className="px-2.5 py-1 bg-rose-50 dark:bg-rose-950/20 text-rose-700 dark:text-rose-400 text-xs font-black rounded-lg border border-rose-100 dark:border-rose-900/50 hover:bg-rose-100 dark:hover:bg-rose-900/30 transition-all cursor-pointer"
+                      >
+                        -₹{val}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* UPI and Cash Buttons */}
+            <div className="grid grid-cols-2 gap-3.5 pt-2">
               <button
                 onClick={() => handleProcessPayment('upi')}
-                className="flex flex-col items-center justify-center p-4 bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/20 dark:hover:bg-blue-950/45 border border-blue-100 dark:border-blue-900/50 rounded-2xl transition-all cursor-pointer group"
+                className="flex flex-col items-center justify-center p-3.5 bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/20 dark:hover:bg-blue-950/45 border border-blue-100 dark:border-blue-900/50 rounded-2xl transition-all cursor-pointer group"
               >
-                <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-600 flex items-center justify-center font-bold mb-2 group-hover:scale-105 transition-transform">
+                <div className="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-600 flex items-center justify-center font-bold mb-1.5 group-hover:scale-105 transition-transform text-xs">
                   UPI
                 </div>
-                <span className="text-xs font-bold text-blue-700 dark:text-blue-400">Pay via UPI</span>
+                <span className="text-[11px] font-bold text-blue-700 dark:text-blue-400">Pay via UPI</span>
               </button>
               <button
                 onClick={() => handleProcessPayment('cash')}
-                className="flex flex-col items-center justify-center p-4 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/20 dark:hover:bg-emerald-950/45 border border-emerald-100 dark:border-emerald-900/50 rounded-2xl transition-all cursor-pointer group"
+                className="flex flex-col items-center justify-center p-3.5 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/20 dark:hover:bg-emerald-950/45 border border-emerald-100 dark:border-emerald-900/50 rounded-2xl transition-all cursor-pointer group"
               >
-                <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center font-bold mb-2 group-hover:scale-105 transition-transform">
+                <div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-600 flex items-center justify-center font-bold mb-1.5 group-hover:scale-105 transition-transform text-xs">
                   💵
                 </div>
-                <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400">Pay via Cash</span>
+                <span className="text-[11px] font-bold text-emerald-700 dark:text-emerald-400">Pay via Cash</span>
               </button>
             </div>
 
             <Button 
               variant="outline" 
-              className="w-full py-2.5 rounded-xl text-xs font-semibold text-slate-500"
+              className="w-full py-2.5 rounded-xl text-xs font-semibold text-slate-500 dark:text-slate-400 dark:border-slate-700"
               onClick={() => setShowPaymentModal(false)}
             >
               Cancel
