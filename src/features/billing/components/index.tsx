@@ -83,6 +83,11 @@ export const BillInvoiceView: React.FC<BillInvoiceViewProps> = ({ bill, onClose 
       paymentText = `Paid in Cycle: -₹${bill.paid_amount.toFixed(2)}\n`;
     }
 
+    const netVal = (bill.balance_forward || 0) + displayAmt - bill.paid_amount;
+    const netPayableText = netVal < 0
+      ? `*Overpaid (Credit): ₹${Math.abs(netVal).toFixed(2)}*`
+      : `*Net Payable Dues: ₹${netVal.toFixed(2)}*`;
+
     return `${bizGreeting} ${bill.customer_name},\n\n` +
       `*${bizName.toUpperCase()} INVOICE*\n` +
       `---------------------------------\n` +
@@ -95,8 +100,8 @@ export const BillInvoiceView: React.FC<BillInvoiceViewProps> = ({ bill, onClose 
       `Balance Forward: ₹${(bill.balance_forward || 0).toFixed(2)}\n` +
       paymentText +
       `---------------------------------\n` +
-      `*Net Payable: ₹${Math.max(0, (bill.balance_forward || 0) + displayAmt - bill.paid_amount).toFixed(2)}*\n` +
-      `---------------------------------\n` +
+      netPayableText +
+      `\n---------------------------------\n` +
       `${bizThankYou}`;
   };
 
@@ -218,10 +223,24 @@ export const BillInvoiceView: React.FC<BillInvoiceViewProps> = ({ bill, onClose 
             </div>
           )}
           <hr className="border-slate-100 dark:border-slate-800" />
-          <div className="flex justify-between text-sm font-extrabold">
-            <span className="text-slate-800 dark:text-slate-100">Net Payable dues</span>
-            <span className="text-rose-600 dark:text-rose-400">₹{Math.max(0, (bill.balance_forward || 0) + displayAmt - bill.paid_amount).toFixed(2)}</span>
-          </div>
+          {(() => {
+            const netVal = (bill.balance_forward || 0) + displayAmt - bill.paid_amount;
+            if (netVal < 0) {
+              return (
+                <div className="flex justify-between text-sm font-extrabold text-emerald-600 dark:text-emerald-450">
+                  <span>Overpaid (Credit)</span>
+                  <span>₹{Math.abs(netVal).toFixed(2)}</span>
+                </div>
+              );
+            } else {
+              return (
+                <div className="flex justify-between text-sm font-extrabold text-rose-600 dark:text-rose-400">
+                  <span>Net Payable dues</span>
+                  <span>₹{netVal.toFixed(2)}</span>
+                </div>
+              );
+            }
+          })()}
         </div>
       </div>
 

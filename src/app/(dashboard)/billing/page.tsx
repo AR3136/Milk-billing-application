@@ -143,8 +143,8 @@ export default function BillingPage() {
                         </span>
                       )}
                     </td>
-                    <td className="py-4 px-5 text-right font-black text-slate-800 dark:text-slate-100">
-                      ₹{cust.balance.toFixed(2)}
+                    <td className={`py-4 px-5 text-right font-black ${cust.balance < 0 ? 'text-emerald-600 dark:text-emerald-450' : 'text-slate-800 dark:text-slate-100'}`}>
+                      {cust.balance < 0 ? `₹${Math.abs(cust.balance).toFixed(2)} Cr.` : `₹${cust.balance.toFixed(2)}`}
                     </td>
                   </tr>
                 ))}

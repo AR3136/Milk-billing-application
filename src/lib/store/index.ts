@@ -223,7 +223,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
           .reduce((sum, p) => sum + p.amount, 0);
         const rawBalance = totalMilk - totalPaid;
         const cleanBalance = Math.abs(rawBalance) < 0.01 ? 0 : parseFloat(rawBalance.toFixed(2));
-        return { ...c, balance: Math.max(0, cleanBalance) };
+        return { ...c, balance: cleanBalance };
       });
 
       set({
@@ -362,7 +362,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         if (cust.id === p.customerId) {
           const raw = cust.balance - p.amount;
           const clean = Math.abs(raw) < 0.01 ? 0 : parseFloat(raw.toFixed(2));
-          return { ...cust, balance: Math.max(0, clean) };
+          return { ...cust, balance: clean };
         }
         return cust;
       }),

@@ -177,7 +177,9 @@ function CustomerDetailContent() {
                 </div>
                 <div className="pt-3 border-t border-slate-100 dark:border-slate-800/80">
                   <p className="text-[10px] uppercase text-slate-500 font-bold">Outstanding Balance</p>
-                  <p className="text-xl font-extrabold text-rose-600 mt-1">₹{customer.balance.toFixed(2)}</p>
+                  <p className={`text-xl font-extrabold mt-1 ${customer.balance < 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                    {customer.balance < 0 ? `₹${Math.abs(customer.balance).toFixed(2)} (Credit)` : `₹${customer.balance.toFixed(2)} (Dues)`}
+                  </p>
                 </div>
               </div>
             </Card>
@@ -221,8 +223,8 @@ function CustomerDetailContent() {
             </Card>
           </div>
 
-          {/* Detailed entries logs */}
-          <div className="lg:col-span-2">
+          {/* Detailed entries and payments logs */}
+          <div className="lg:col-span-2 space-y-6">
             <Card title="Deliveries History Logbook" subtitle="Showing all collection entries recorded for this user">
               <div className="overflow-x-auto max-h-[350px] overflow-y-auto">
                 <table className="w-full text-left border-collapse text-xs">
@@ -259,6 +261,39 @@ function CustomerDetailContent() {
                     ) : (
                       <tr>
                         <td colSpan={6} className="py-8 text-center text-slate-500">No milk yields logged for this member yet.</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </Card>
+
+            <Card title="Payments History Logbook" subtitle="Showing all payment receipts logged for this user">
+              <div className="overflow-x-auto max-h-[350px] overflow-y-auto">
+                <table className="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr className="border-b border-slate-100 dark:border-slate-800 text-slate-500 dark:text-slate-400 uppercase font-semibold sticky top-0 bg-white dark:bg-slate-800 z-10">
+                      <th className="py-2.5 px-3">Date</th>
+                      <th className="py-2.5 px-3">Method</th>
+                      <th className="py-2.5 px-3 text-right">Amount Paid</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-50 dark:divide-slate-800/50">
+                    {customerPayments.length > 0 ? (
+                      customerPayments.map((p) => (
+                        <tr key={p.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/10">
+                          <td className="py-2.5 px-3">{p.date}</td>
+                          <td className="py-2.5 px-3 capitalize">
+                            <Badge variant={p.method === 'upi' ? 'primary' : 'secondary'}>
+                              {p.method}
+                            </Badge>
+                          </td>
+                          <td className="py-2.5 px-3 text-right font-bold text-emerald-600 dark:text-emerald-400 font-medium">₹{p.amount.toFixed(2)}</td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={3} className="py-8 text-center text-slate-500">No payment receipts logged for this member yet.</td>
                       </tr>
                     )}
                   </tbody>
