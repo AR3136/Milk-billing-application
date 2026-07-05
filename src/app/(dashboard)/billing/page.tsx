@@ -133,9 +133,13 @@ export default function BillingPage() {
                       {cust.name}
                     </td>
                     <td className="py-4 px-5">
-                      {cust.balance > 0 ? (
+                      {cust.balance > 0.01 ? (
                         <span className="inline-flex items-center gap-1 text-rose-600 font-medium bg-rose-50 dark:bg-rose-950/20 px-2 py-0.5 rounded-md text-[10px]">
                           Pending
+                        </span>
+                      ) : cust.balance < -0.01 ? (
+                        <span className="inline-flex items-center gap-1 text-blue-650 dark:text-blue-400 font-semibold bg-blue-50 dark:bg-blue-950/25 px-2 py-0.5 rounded-md text-[10px]">
+                          Credit
                         </span>
                       ) : (
                         <span className="inline-flex items-center gap-1 text-emerald-600 font-medium bg-emerald-50 dark:bg-emerald-950/20 px-2 py-0.5 rounded-md text-[10px]">
