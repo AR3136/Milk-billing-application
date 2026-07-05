@@ -500,7 +500,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         name: updates.name,
         phone: updates.phone,
         milk_type: updates.milkType,
-        rate: updates.rate,
+        rate_per_liter: updates.rate,
         rate_cow: updates.rateCow,
         rate_buffalo: updates.rateBuffalo,
         is_active: updates.isActive,
