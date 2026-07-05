@@ -62,12 +62,12 @@ export default function MilkEntryPage() {
 
   const handleAsYesterday = () => {
     if (!customerId) return;
-    const prev = milkEntries.find(e => e.customerId === customerId);
+    const prev = milkEntries.find(e => e.customerId === customerId && e.milkType === effectiveMilkType);
     if (prev) {
       setQuantity(prev.quantity.toString());
-      toast.success(`Copied ${prev.quantity} L from previous entry`);
+      toast.success(`Copied ${prev.quantity} L of ${effectiveMilkType} from previous entry`);
     } else {
-      toast.error('No previous entry found for this customer');
+      toast.error(`No previous ${effectiveMilkType} entry found for this customer`);
     }
   };
 
