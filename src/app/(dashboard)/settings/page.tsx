@@ -1,21 +1,29 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { DashboardLayoutShell } from '@/components/layout';
 import { Card, Button, Input } from '@/components/ui';
-import { Save, ToggleLeft, ToggleRight, MessageSquare } from 'lucide-react';
+import { Save, ToggleLeft, ToggleRight, MessageSquare, Trash2, ShieldAlert, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { useAppStore } from '@/lib/store';
 
 export default function SettingsPage() {
+  const router = useRouter();
   const updateAllCustomerRates = useAppStore(state => state.updateAllCustomerRates);
+  const deleteUserAccount = useAppStore(state => state.deleteUserAccount);
+  const currentUser = useAppStore(state => state.currentUser);
+
   const [businessName, setBusinessName] = useState('Ganga Dairy Farm');
   const [helpline, setHelpline] = useState('+91 98765 43210');
   const [address, setAddress] = useState('Ganga Chowk, Sector-4, Pune, Maharashtra');
   const [cowRate, setCowRate] = useState('45');
   const [buffaloRate, setBuffaloRate] = useState('60');
   const [mixedRate, setMixedRate] = useState('52');
+
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
 
   // WhatsApp templates
   const [whatsappGreeting, setWhatsappGreeting] = useState('Hello');
@@ -219,9 +227,86 @@ export default function SettingsPage() {
               </div>
             </div>
           </Card>
+
+          {/* Account Danger Zone */}
+          <Card title="Account Maintenance & Danger Zone" className="border-rose-100 dark:border-rose-950/30">
+            <div className="space-y-4 text-xs">
+              <div className="p-3.5 bg-rose-50 dark:bg-rose-950/20 text-rose-800 dark:text-rose-350 rounded-xl border border-rose-100 dark:border-rose-900/40 flex items-start gap-2.5">
+                <ShieldAlert className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-bold">Permanent Account Deletion</p>
+                  <p className="mt-1 leading-relaxed text-[11px] text-slate-500 dark:text-slate-400">
+                    Deleting your account will permanently remove all configuration settings, customers, milk delivery ledgers, expenses, and payment records from the database. 
+                    <strong> This action is irreversible.</strong> After deletion, you can instantly register a fresh account using the same email address.
+                  </p>
+                </div>
+              </div>
+              <Button 
+                onClick={() => setShowDeleteConfirm(true)} 
+                className="w-full py-2.5 bg-rose-600 hover:bg-rose-700 dark:bg-rose-900/60 dark:hover:bg-rose-900/80 text-white font-bold rounded-xl flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                <Trash2 className="w-4 h-4" /> Delete My Account & All Data
+              </Button>
+            </div>
+          </Card>
         </div>
 
       </div>
+
+      {/* Delete Confirmation Modal Overlay */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/65 backdrop-blur-xs">
+          <div className="w-full max-w-sm bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-2xl space-y-4 animate-scale-in">
+            <div className="flex items-center gap-3 text-rose-600">
+              <div className="w-10 h-10 bg-rose-50 dark:bg-rose-950/25 rounded-xl flex items-center justify-center shrink-0">
+                <Trash2 className="w-5 h-5 text-rose-600" />
+              </div>
+              <div>
+                <h3 className="font-bold text-slate-800 dark:text-slate-100 text-sm">Delete Account & Data?</h3>
+                <p className="text-[10px] text-rose-500 font-semibold uppercase tracking-wide">This action is irreversible</p>
+              </div>
+            </div>
+            
+            <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+              Are you absolutely sure you want to delete your account <strong>({currentUser?.email})</strong> and wipe all dairy farm ledgers from the server?
+            </p>
+
+            <div className="flex gap-2 justify-end pt-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => setShowDeleteConfirm(false)}
+                disabled={isDeletingAccount}
+                className="px-4 py-2 text-xs font-semibold rounded-xl dark:border-slate-700"
+              >
+                Cancel
+              </Button>
+              <Button 
+                variant="primary" 
+                size="sm" 
+                onClick={async () => {
+                  setIsDeletingAccount(true);
+                  try {
+                    await deleteUserAccount();
+                    toast.success("Account deleted successfully.");
+                    router.push('/register');
+                  } catch (err: any) {
+                    toast.error(err.message || "Failed to delete account. Make sure database RPC has been deployed.");
+                  } finally {
+                    setIsDeletingAccount(false);
+                    setShowDeleteConfirm(false);
+                  }
+                }}
+                disabled={isDeletingAccount}
+                className="px-4 py-2 text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white rounded-xl flex items-center gap-1.5 cursor-pointer"
+              >
+                {isDeletingAccount && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                Yes, Delete Everything
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </DashboardLayoutShell>
   );
 }

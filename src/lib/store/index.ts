@@ -82,6 +82,7 @@ interface AppStore {
   deleteCustomer: (id: string) => Promise<void>;
   deleteMilkEntry: (id: string) => Promise<void>;
   updateAllCustomerRates: (cowRate: number, buffaloRate: number, mixedRate: number) => Promise<void>;
+  deleteUserAccount: () => Promise<void>;
 }
 
 export const useAppStore = create<AppStore>((set, get) => ({
@@ -565,5 +566,24 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
     // 3. Automatically reload state & recalculate everything dynamically
     await get().fetchData();
+  },
+
+  deleteUserAccount: async () => {
+    const supabase = createClient();
+    // Try executing RPC
+    const { error: rpcErr } = await supabase.rpc('delete_user_account');
+    if (rpcErr) throw new Error(rpcErr.message);
+
+    // Sign out session
+    await supabase.auth.signOut();
+
+    // Reset local state
+    set({
+      customers: [],
+      milkEntries: [],
+      payments: [],
+      expenses: [],
+      currentUser: null,
+    });
   },
 }));
