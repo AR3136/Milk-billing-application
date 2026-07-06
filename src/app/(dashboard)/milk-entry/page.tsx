@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { DashboardLayoutShell } from '@/components/layout';
 import { Card, Badge, Button, Input } from '@/components/ui';
 import { Milk, ClipboardCheck, History, AlertCircle, Trash2, Loader2, MessageSquare, CheckCircle2 } from 'lucide-react';
@@ -203,8 +205,30 @@ export default function MilkEntryPage() {
     window.open(url, '_blank');
   };
 
+  const pathname = usePathname();
+  const tabs = [
+    { href: '/milk-entry',            label: 'Daily Entry' },
+    { href: '/milk-entry/bulk-historical', label: 'Bulk Historical Entry' },
+  ];
+
   return (
     <DashboardLayoutShell title="Daily Milk Entry">
+      <div className="flex gap-1 p-1 bg-slate-100 dark:bg-slate-800 rounded-xl mb-5 w-fit">
+        {tabs.map(tab => (
+          <Link
+            key={tab.href}
+            href={tab.href}
+            className={`px-4 py-2 rounded-lg text-xs font-semibold transition-all duration-200 ${
+              pathname === tab.href
+                ? 'bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 shadow-sm'
+                : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+            }`}
+          >
+            {tab.label}
+          </Link>
+        ))}
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
         {/* Entry Form */}
