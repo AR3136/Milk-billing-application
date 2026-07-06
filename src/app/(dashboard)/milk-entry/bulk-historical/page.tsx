@@ -70,7 +70,7 @@ function computeAmountForShift(s: ShiftData): number {
   if (s.pricingMethod === 'by_amount') return parseFloat(s.amount) || 0;
   const qty = parseFloat(s.quantity) || 0;
   const rate = parseFloat(s.rate) || 0;
-  return Math.floor(qty * rate);
+  return Math.round(qty * rate);
 }
 
 function makeDefaultShift(
@@ -246,7 +246,7 @@ function ShiftCell({ shift, shiftKey, onChange, disabled }: ShiftCellProps) {
           {/* Computed amount preview */}
           {shift.pricingMethod === 'by_quantity' && shift.quantity && shift.rate && (
             <div className="text-[10px] font-bold text-blue-600 dark:text-blue-400 text-right">
-              = ₹{Math.floor(parseFloat(shift.quantity) * parseFloat(shift.rate))}
+              = ₹{Math.round(parseFloat(shift.quantity) * parseFloat(shift.rate))}
             </div>
           )}
         </>
@@ -518,7 +518,7 @@ export default function BulkHistoricalEntryPage() {
         const updated = { ...s, milkType: 'cow' as MilkType, rate: defaultCowRate, pricingMethod: defaultPricingMethod };
         if (defaultPricingMethod === 'by_quantity') {
           updated.quantity = defaultCowValue;
-          updated.amount   = cowVal > 0 && cowRate > 0 ? String(Math.floor(cowVal * cowRate)) : '';
+          updated.amount   = cowVal > 0 && cowRate > 0 ? String(Math.round(cowVal * cowRate)) : '';
         } else {
           updated.amount = defaultCowValue; updated.quantity = ''; updated.rate = '';
         }
@@ -530,7 +530,7 @@ export default function BulkHistoricalEntryPage() {
         const updated = { ...s, milkType: 'buffalo' as MilkType, rate: defaultBuffaloRate, pricingMethod: defaultPricingMethod };
         if (defaultPricingMethod === 'by_quantity') {
           updated.quantity = defaultBuffaloValue;
-          updated.amount   = bufVal > 0 && bufRate > 0 ? String(Math.floor(bufVal * bufRate)) : '';
+          updated.amount   = bufVal > 0 && bufRate > 0 ? String(Math.round(bufVal * bufRate)) : '';
         } else {
           updated.amount = defaultBuffaloValue; updated.quantity = ''; updated.rate = '';
         }
@@ -556,7 +556,7 @@ export default function BulkHistoricalEntryPage() {
         const updated = { ...s, milkType: defaultMilkType, rate: defaultRate, pricingMethod: defaultPricingMethod };
         if (defaultPricingMethod === 'by_quantity') {
           updated.quantity = defaultValue;
-          updated.amount   = val > 0 && rate > 0 ? String(Math.floor(val * rate)) : '';
+          updated.amount   = val > 0 && rate > 0 ? String(Math.round(val * rate)) : '';
         } else {
           updated.amount = defaultValue; updated.quantity = ''; updated.rate = '';
         }
@@ -999,7 +999,7 @@ export default function BulkHistoricalEntryPage() {
                   </div>
                   {defaultPricingMethod === 'by_quantity' && defaultCowValue && defaultCowRate && (
                     <div className="text-[10px] font-bold text-blue-600 dark:text-blue-400">
-                      = ₹{Math.floor(parseFloat(defaultCowValue) * parseFloat(defaultCowRate))}
+                      = ₹{Math.round(parseFloat(defaultCowValue) * parseFloat(defaultCowRate))}
                     </div>
                   )}
                 </div>
@@ -1031,7 +1031,7 @@ export default function BulkHistoricalEntryPage() {
                   </div>
                   {defaultPricingMethod === 'by_quantity' && defaultBuffaloValue && defaultBuffaloRate && (
                     <div className="text-[10px] font-bold text-amber-600 dark:text-amber-400">
-                      = ₹{Math.floor(parseFloat(defaultBuffaloValue) * parseFloat(defaultBuffaloRate))}
+                      = ₹{Math.round(parseFloat(defaultBuffaloValue) * parseFloat(defaultBuffaloRate))}
                     </div>
                   )}
                 </div>
@@ -1140,8 +1140,8 @@ export default function BulkHistoricalEntryPage() {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {[
               { label: 'Days Filled',    value: stats.filledDays,             sub: `of ${rows.length}`,   color: 'text-blue-600 dark:text-blue-400'    },
-              { label: 'Morning Total',  value: `₹${stats.morningTotal}`,     sub: 'amount',               color: 'text-amber-600 dark:text-amber-400'  },
-              { label: 'Evening Total',  value: `₹${stats.eveningTotal}`,     sub: 'amount',               color: 'text-indigo-600 dark:text-indigo-400' },
+              { label: 'Cow Total',      value: `₹${stats.morningTotal}`,     sub: 'amount',               color: 'text-amber-600 dark:text-amber-400'  },
+              { label: 'Buffalo Total',  value: `₹${stats.eveningTotal}`,     sub: 'amount',               color: 'text-indigo-600 dark:text-indigo-400' },
               { label: 'Grand Total',    value: `₹${stats.morningTotal + stats.eveningTotal}`, sub: 'this month', color: 'text-emerald-600 dark:text-emerald-400' },
             ].map(s => (
               <div key={s.label} className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-3 text-center">
@@ -1205,10 +1205,10 @@ export default function BulkHistoricalEntryPage() {
                       </th>
                       <th className="py-2 px-3 text-left w-24">Date</th>
                       <th className="py-2 px-3 text-left">
-                        <div className="flex items-center gap-1"><Sun className="w-3 h-3 text-amber-500" /> Morning</div>
+                        <div className="flex items-center gap-1"><Sun className="w-3 h-3 text-amber-500" /> Cow (Morning)</div>
                       </th>
                       <th className="py-2 px-3 text-left">
-                        <div className="flex items-center gap-1"><Moon className="w-3 h-3 text-indigo-500" /> Evening</div>
+                        <div className="flex items-center gap-1"><Moon className="w-3 h-3 text-indigo-500" /> Buffalo (Evening)</div>
                       </th>
                       <th className="py-2 px-3 text-left w-28">Remarks</th>
                       <th className="py-2 pr-5 text-right w-20">Save Row</th>
