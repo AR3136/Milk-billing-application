@@ -47,20 +47,20 @@ export const BillInvoiceView: React.FC<BillInvoiceViewProps> = ({ bill, onClose 
 
   const cowQty = cowEntries.reduce((sum, e) => sum + e.quantity, 0);
   const cowAmt = cowEntries.reduce((sum, e) => sum + (e.amount || 0), 0);
-  const cowRate = cowQty > 0 ? (cowAmt / cowQty) : 0;
+  const cowRate = cowEntries.find(e => e.rate > 0)?.rate || matchedCust?.rateCow || matchedCust?.rate || 0;
 
   const buffaloQty = buffaloEntries.reduce((sum, e) => sum + e.quantity, 0);
   const buffaloAmt = buffaloEntries.reduce((sum, e) => sum + (e.amount || 0), 0);
-  const buffaloRate = buffaloQty > 0 ? (buffaloAmt / buffaloQty) : 0;
+  const buffaloRate = buffaloEntries.find(e => e.rate > 0)?.rate || matchedCust?.rateBuffalo || matchedCust?.rate || 0;
 
   const mixedQty = mixedEntries.reduce((sum, e) => sum + e.quantity, 0);
   const mixedAmt = mixedEntries.reduce((sum, e) => sum + (e.amount || 0), 0);
-  const mixedRate = mixedQty > 0 ? (mixedAmt / mixedQty) : 0;
+  const mixedRate = mixedEntries.find(e => e.rate > 0)?.rate || matchedCust?.rate || 0;
 
   // Use computed cycle values, with fallback to bill defaults if entries are not yet synced/empty
   const displayQty = cycleEntries.length > 0 ? cycleEntries.reduce((sum, e) => sum + e.quantity, 0) : bill.total_quantity;
   const displayAmt = cycleEntries.length > 0 ? (cowAmt + buffaloAmt + mixedAmt) : bill.total_amount;
-  const avgRate = displayQty > 0 ? (displayAmt / displayQty) : 0;
+  const avgRate = cycleEntries.find(e => e.rate > 0)?.rate || matchedCust?.rate || 0;
 
   // Clean quantities to avoid floating point issues (e.g. 0.8500000000000001 L)
   const cleanCowQty = parseFloat(cowQty.toFixed(2));
