@@ -1205,10 +1205,10 @@ export default function BulkHistoricalEntryPage() {
                       </th>
                       <th className="py-2 px-3 text-left w-24">Date</th>
                       <th className="py-2 px-3 text-left">
-                        <div className="flex items-center gap-1"><Sun className="w-3 h-3 text-amber-500" /> Cow (Morning)</div>
+                        <div className="flex items-center gap-1"><Sun className="w-3 h-3 text-amber-500" /> Cow</div>
                       </th>
                       <th className="py-2 px-3 text-left">
-                        <div className="flex items-center gap-1"><Moon className="w-3 h-3 text-indigo-500" /> Buffalo (Evening)</div>
+                        <div className="flex items-center gap-1"><Moon className="w-3 h-3 text-indigo-500" /> Buffalo</div>
                       </th>
                       <th className="py-2 px-3 text-left w-28">Remarks</th>
                       <th className="py-2 pr-5 text-right w-20">Save Row</th>
