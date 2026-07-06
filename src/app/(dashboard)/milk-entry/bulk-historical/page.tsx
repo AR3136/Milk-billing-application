@@ -11,7 +11,7 @@ import { createClient } from '@/lib/supabase/client';
 import { toast } from 'sonner';
 import {
   Calendar, ChevronDown, Search, Loader2, Save, AlertTriangle,
-  Sun, Moon, Info, CheckSquare, Square, X, RefreshCw,
+  Sun, Moon, Info, CheckSquare, Square, X, RefreshCw, Trash
 } from 'lucide-react';
 
 // ─── Constants ───────────────────────────────────────────────────────────────
@@ -415,6 +415,8 @@ export default function BulkHistoricalEntryPage() {
   const [isSaving, setIsSaving]         = useState(false);
   const [saveProgress, setSaveProgress] = useState(0);
   const [showConfirm, setShowConfirm]   = useState<'all' | 'selected' | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting]     = useState(false);
 
   const selectedCust = customers.find(c => c.id === selectedCustId);
 
@@ -814,6 +816,80 @@ export default function BulkHistoricalEntryPage() {
   const confirmSave = () => {
     if (showConfirm === 'all')      performSave(rows);
     if (showConfirm === 'selected') performSave(rows.filter(r => r.selected));
+  };
+
+  const getSelectedExistingIds = (): string[] => {
+    const ids: string[] = [];
+    rows.forEach(r => {
+      if (r.selected) {
+        if (r.morning.existingId) ids.push(r.morning.existingId);
+        if (r.evening.existingId) ids.push(r.evening.existingId);
+      }
+    });
+    return ids;
+  };
+
+  const handleDeletes = async () => {
+    const ids = getSelectedExistingIds();
+    if (ids.length === 0) {
+      toast.info('No existing saved entries found in the selected rows.');
+      return;
+    }
+    
+    setIsDeleting(true);
+    setShowDeleteConfirm(false);
+    
+    try {
+      const supabase = createClient();
+      
+      // 1. Verify if any of the entries belong to finalized bills
+      const { data: lineItems, error: lineErr } = await supabase
+        .from('bill_line_items')
+        .select('bill_id')
+        .in('milk_entry_id', ids);
+        
+      if (lineErr) throw new Error(lineErr.message);
+      
+      if (lineItems && lineItems.length > 0) {
+        const billIds = lineItems.map(item => item.bill_id);
+        const { data: bills, error: billsErr } = await supabase
+          .from('bills')
+          .select('status, bill_number')
+          .in('id', billIds)
+          .is('deleted_at', null);
+          
+        if (billsErr) throw new Error(billsErr.message);
+        
+        const finalizedStatuses = ['sent', 'paid', 'partially_paid', 'overdue'];
+        const finalizedBill = bills?.find(b => finalizedStatuses.includes(b.status));
+        
+        if (finalizedBill) {
+          throw new Error(`Cannot delete: Some selected entries belong to a finalized bill (${finalizedBill.bill_number}). Finalized bills must be reopened or cancelled first.`);
+        }
+        
+        // Delete drafts line item associations
+        await supabase
+          .from('bill_line_items')
+          .delete()
+          .in('milk_entry_id', ids);
+      }
+      
+      // 2. Perform the batch deletion
+      const { error: delErr } = await supabase
+        .from('milk_entries')
+        .delete()
+        .in('id', ids);
+        
+      if (delErr) throw new Error(delErr.message);
+      
+      await fetchData();
+      toast.success(`Successfully deleted ${ids.length} entries.`);
+      await loadMonth();
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to delete entries.');
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   // ── Computed stats ──────────────────────────────────────────────────────────
@@ -1339,6 +1415,16 @@ export default function BulkHistoricalEntryPage() {
                       <span className="font-bold text-blue-600 dark:text-blue-400">{saveableTotal}</span> saveable
                       {stats.dupCount > 0 && <> · <span className="font-bold text-amber-500">{stats.dupCount}</span> existing</>}
                     </div>
+                    {getSelectedExistingIds().length > 0 && (
+                      <button
+                        onClick={() => setShowDeleteConfirm(true)}
+                        disabled={isDeleting}
+                        className="px-4 py-2 rounded-xl text-xs font-bold border border-rose-200 text-rose-600 hover:bg-rose-50 dark:border-rose-900/50 dark:text-rose-400 dark:hover:bg-rose-950/20 transition-colors flex items-center gap-1.5"
+                      >
+                        <Trash className="w-3.5 h-3.5" />
+                        Delete Selected ({getSelectedExistingIds().length})
+                      </button>
+                    )}
                     <button
                       onClick={handleSaveSelected}
                       disabled={selectedCount === 0}
@@ -1412,6 +1498,45 @@ export default function BulkHistoricalEntryPage() {
                 className="flex-1 px-4 py-2.5 rounded-xl text-xs font-bold bg-blue-600 text-white hover:bg-blue-700 transition-colors"
               >
                 Confirm Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* ── Confirm delete modal ───────────────────────────────────────────── */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-800 p-6 max-w-sm w-full space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-xl bg-rose-50 dark:bg-rose-950/40 flex items-center justify-center shrink-0">
+                <Trash className="w-5 h-5 text-rose-500" />
+              </div>
+              <div>
+                <h4 className="font-bold text-slate-800 dark:text-slate-100 text-sm">
+                  Delete Selected Entries?
+                </h4>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                  {selectedCust?.name} · {MONTH_NAMES[month - 1]} {year}
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-rose-50/50 dark:bg-rose-950/10 rounded-xl p-3.5 text-xs text-rose-700 dark:text-rose-300">
+              This will permanently delete <strong>{getSelectedExistingIds().length}</strong> saved entries from the database. This action cannot be undone.
+            </div>
+
+            <div className="flex gap-2 pt-1">
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                className="flex-1 px-4 py-2.5 rounded-xl text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeletes}
+                className="flex-1 px-4 py-2.5 rounded-xl text-xs font-bold bg-rose-600 text-white hover:bg-rose-700 transition-colors"
+              >
+                Delete Permanent
               </button>
             </div>
           </div>
