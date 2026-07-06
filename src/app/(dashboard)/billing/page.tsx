@@ -35,8 +35,24 @@ export default function BillingPage() {
 
     const totalQuantity = cycleEntries.reduce((sum, e) => sum + e.quantity, 0);
     
-    // Calculate total yield: sum of all amounts for this cycle
-    const cycleTotalAmount = cycleEntries.reduce((sum, e) => sum + (e.amount || 0), 0);
+    // Calculate total yield: simple rate * qty for each type, rounded
+    const cowEntries = cycleEntries.filter(e => e.milkType === 'cow');
+    const buffaloEntries = cycleEntries.filter(e => e.milkType === 'buffalo');
+    const mixedEntries = cycleEntries.filter(e => e.milkType !== 'cow' && e.milkType !== 'buffalo');
+
+    const cowQty = cowEntries.reduce((sum, e) => sum + e.quantity, 0);
+    const cowRate = cowEntries.find(e => e.rate > 0)?.rate || cust.rateCow || cust.rate || 0;
+    const cowAmt = Math.round(cowQty * cowRate);
+
+    const buffaloQty = buffaloEntries.reduce((sum, e) => sum + e.quantity, 0);
+    const buffaloRate = buffaloEntries.find(e => e.rate > 0)?.rate || cust.rateBuffalo || cust.rate || 0;
+    const buffaloAmt = Math.round(buffaloQty * buffaloRate);
+
+    const mixedQty = mixedEntries.reduce((sum, e) => sum + e.quantity, 0);
+    const mixedRate = mixedEntries.find(e => e.rate > 0)?.rate || cust.rate || 0;
+    const mixedAmt = Math.round(mixedQty * mixedRate);
+
+    const cycleTotalAmount = cowAmt + buffaloAmt + mixedAmt;
 
     // 2. Fetch payments made during this cycle, deducting credit settlements
     const cyclePaymentsRaw = payments
@@ -49,9 +65,23 @@ export default function BillingPage() {
 
     // 3. Compute balance forward (dues before cycle start date)
     const priorEntries = milkEntries.filter(e => e.customerId === cust.id && e.date < startDate);
-    const priorQuantity = priorEntries.reduce((sum, e) => sum + e.quantity, 0);
-    
-    const priorMilk = priorEntries.reduce((sum, e) => sum + (e.amount || 0), 0);
+    const priorCow = priorEntries.filter(e => e.milkType === 'cow');
+    const priorBuffalo = priorEntries.filter(e => e.milkType === 'buffalo');
+    const priorMixed = priorEntries.filter(e => e.milkType !== 'cow' && e.milkType !== 'buffalo');
+
+    const priorCowQty = priorCow.reduce((sum, e) => sum + e.quantity, 0);
+    const priorCowRate = priorCow.find(e => e.rate > 0)?.rate || cust.rateCow || cust.rate || 0;
+    const priorCowAmt = Math.round(priorCowQty * priorCowRate);
+
+    const priorBuffaloQty = priorBuffalo.reduce((sum, e) => sum + e.quantity, 0);
+    const priorBuffaloRate = priorBuffalo.find(e => e.rate > 0)?.rate || cust.rateBuffalo || cust.rate || 0;
+    const priorBuffaloAmt = Math.round(priorBuffaloQty * priorBuffaloRate);
+
+    const priorMixedQty = priorMixed.reduce((sum, e) => sum + e.quantity, 0);
+    const priorMixedRate = priorMixed.find(e => e.rate > 0)?.rate || cust.rate || 0;
+    const priorMixedAmt = Math.round(priorMixedQty * priorMixedRate);
+
+    const priorMilk = priorCowAmt + priorBuffaloAmt + priorMixedAmt;
 
     const priorPayments = payments.filter(p => p.customerId === cust.id && p.date < startDate);
     const priorPaidRaw = priorPayments.reduce((sum, p) => sum + p.amount, 0);

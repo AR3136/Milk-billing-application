@@ -46,16 +46,16 @@ export const BillInvoiceView: React.FC<BillInvoiceViewProps> = ({ bill, onClose 
   const mixedEntries = cycleEntries.filter(e => e.milkType !== 'cow' && e.milkType !== 'buffalo');
 
   const cowQty = cowEntries.reduce((sum, e) => sum + e.quantity, 0);
-  const cowAmt = cowEntries.reduce((sum, e) => sum + (e.amount || 0), 0);
   const cowRate = cowEntries.find(e => e.rate > 0)?.rate || matchedCust?.rateCow || matchedCust?.rate || 0;
+  const cowAmt = Math.round(cowQty * cowRate);
 
   const buffaloQty = buffaloEntries.reduce((sum, e) => sum + e.quantity, 0);
-  const buffaloAmt = buffaloEntries.reduce((sum, e) => sum + (e.amount || 0), 0);
   const buffaloRate = buffaloEntries.find(e => e.rate > 0)?.rate || matchedCust?.rateBuffalo || matchedCust?.rate || 0;
+  const buffaloAmt = Math.round(buffaloQty * buffaloRate);
 
   const mixedQty = mixedEntries.reduce((sum, e) => sum + e.quantity, 0);
-  const mixedAmt = mixedEntries.reduce((sum, e) => sum + (e.amount || 0), 0);
   const mixedRate = mixedEntries.find(e => e.rate > 0)?.rate || matchedCust?.rate || 0;
+  const mixedAmt = Math.round(mixedQty * mixedRate);
 
   // Use computed cycle values, with fallback to bill defaults if entries are not yet synced/empty
   const displayQty = cycleEntries.length > 0 ? cycleEntries.reduce((sum, e) => sum + e.quantity, 0) : bill.total_quantity;
