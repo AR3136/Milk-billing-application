@@ -2,9 +2,8 @@
 
 import React from 'react';
 import { DashboardLayoutShell } from '@/components/layout';
-import { StatCard } from '@/components/common';
-import { Card, Badge, Button } from '@/components/ui';
-import { Milk, Users, ArrowUpRight, TrendingUp, AlertCircle, Sparkles, Receipt, CreditCard, Wallet } from 'lucide-react';
+import { Card, Badge } from '@/components/ui';
+import { Milk, Users, Receipt, CreditCard, Wallet, Sparkles } from 'lucide-react';
 import { useAppStore } from '@/lib/store';
 import Link from 'next/link';
 
@@ -19,19 +18,10 @@ export default function DashboardPage() {
   const greeting = hour < 12 ? 'Good Morning' : hour < 17 ? 'Good Afternoon' : 'Good Evening';
 
   const activeCustomers = customers.filter(c => c.isActive).length;
-  const totalMilkToday = milkEntries
-    .filter(e => e.date === today)
-    .reduce((sum, e) => sum + e.quantity, 0);
 
   const pendingDues = customers
     .filter(c => c.balance > 0)
     .reduce((sum, c) => sum + c.balance, 0);
-
-  const totalCollections = milkEntries.reduce((sum, e) => sum + e.amount, 0);
-  const totalPayments = payments.reduce((sum, p) => sum + p.amount, 0);
-  const collectionRate = totalCollections > 0 
-    ? (Math.min(100, (totalPayments / totalCollections) * 100)).toFixed(1) + '%'
-    : '100%';
 
   return (
     <DashboardLayoutShell title="Overview Dashboard">
@@ -96,41 +86,57 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-          <StatCard 
-            title="Active Customers" 
-            value={activeCustomers} 
-            subValue="Register & Delivering"
-            icon={<Users className="w-5 h-5 text-blue-500" />}
-            trend={{ type: 'up', value: '+4%' }}
-            color="blue"
-          />
-          <StatCard 
-            title="Today Milk" 
-            value={`${totalMilkToday} Liters`} 
-            subValue="Shift: Morning"
-            icon={<Milk className="w-5 h-5 text-emerald-500" />}
-            trend={{ type: 'up', value: '+12%' }}
-            color="green"
-          />
-          <StatCard 
-            title="Pending Dues" 
-            value={`₹${pendingDues}`} 
-            subValue="Unpaid Bills"
-            icon={<AlertCircle className="w-5 h-5 text-rose-500" />}
-            trend={{ type: 'down', value: '-2.5%' }}
-            color="rose"
-          />
-          <StatCard 
-            title="Collection Rate" 
-            value={collectionRate} 
-            subValue="Paid vs Total Milk"
-            icon={<TrendingUp className="w-5 h-5 text-amber-500" />}
-            trend={{ type: 'neutral', value: 'Stable' }}
-            color="amber"
-          />
-        </div>
+        {/* Today's Summary Table */}
+        {(() => {
+          const todayEntries = milkEntries.filter(e => e.date === today);
+
+          const cowMorning    = todayEntries.filter(e => e.milkType === 'cow'     && e.shift === 'morning').reduce((s, e) => s + e.quantity, 0);
+          const bufMorning    = todayEntries.filter(e => e.milkType === 'buffalo'  && e.shift === 'morning').reduce((s, e) => s + e.quantity, 0);
+          const cowEvening    = todayEntries.filter(e => e.milkType === 'cow'     && e.shift === 'evening').reduce((s, e) => s + e.quantity, 0);
+          const bufEvening    = todayEntries.filter(e => e.milkType === 'buffalo'  && e.shift === 'evening').reduce((s, e) => s + e.quantity, 0);
+
+          const rows = [
+            { label: 'Cow Milk — Morning',     value: `${parseFloat(cowMorning.toFixed(3))} L`,  color: 'text-blue-600 dark:text-blue-400',    dot: 'bg-blue-500'    },
+            { label: 'Buffalo Milk — Morning', value: `${parseFloat(bufMorning.toFixed(3))} L`,  color: 'text-amber-600 dark:text-amber-400',  dot: 'bg-amber-500'   },
+            { label: 'Cow Milk — Evening',     value: `${parseFloat(cowEvening.toFixed(3))} L`,  color: 'text-indigo-600 dark:text-indigo-400', dot: 'bg-indigo-500'  },
+            { label: 'Buffalo Milk — Evening', value: `${parseFloat(bufEvening.toFixed(3))} L`,  color: 'text-orange-600 dark:text-orange-400', dot: 'bg-orange-500'  },
+            { label: 'Active Customers',       value: `${activeCustomers}`,                       color: 'text-emerald-600 dark:text-emerald-400', dot: 'bg-emerald-500'},
+            { label: 'Pending Dues',           value: `₹${pendingDues.toFixed(2)}`,               color: 'text-rose-600 dark:text-rose-400',    dot: 'bg-rose-500'    },
+          ];
+
+          return (
+            <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm">
+              <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                <div>
+                  <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">Today's Summary</h3>
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">{today}</p>
+                </div>
+                <Milk className="w-4 h-4 text-slate-400" />
+              </div>
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="border-b border-slate-100 dark:border-slate-800">
+                    <th className="py-2.5 px-4 text-left font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider text-[10px]">Category</th>
+                    <th className="py-2.5 px-4 text-right font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider text-[10px]">Value</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-50 dark:divide-slate-800/50">
+                  {rows.map((row, i) => (
+                    <tr key={i} className="hover:bg-slate-50/70 dark:hover:bg-slate-800/30 transition-colors">
+                      <td className="py-3.5 px-4 flex items-center gap-2.5">
+                        <span className={`w-2 h-2 rounded-full shrink-0 ${row.dot}`} />
+                        <span className="font-medium text-slate-700 dark:text-slate-300">{row.label}</span>
+                      </td>
+                      <td className={`py-3.5 px-4 text-right font-black ${row.color}`}>
+                        {row.value}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          );
+        })()}
 
         {/* Main Content Splitter */}
         <div className="w-full">
