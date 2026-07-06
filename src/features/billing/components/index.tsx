@@ -22,15 +22,15 @@ export const BillInvoiceView: React.FC<BillInvoiceViewProps> = ({ bill, onClose 
   const [isSavingPayment, setIsSavingPayment] = useState(false);
   const today = new Date().toISOString().split('T')[0];
 
-  const [bizName, setBizName] = useState('Ganga Dairy Farm');
-  const [bizAddress, setBizAddress] = useState('Ganga Chowk, Sector-4, Pune');
+  const [bizName, setBizName] = useState('DairyLedger');
+  const [bizAddress, setBizAddress] = useState('DairyLedger Headquarters, Pune');
   const [bizGreeting, setBizGreeting] = useState('Hello');
   const [bizThankYou, setBizThankYou] = useState('Please clear the dues. Thank you!');
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      setBizName((localStorage.getItem('business_name') || 'Ganga Dairy Farm').trim());
-      setBizAddress((localStorage.getItem('business_address') || 'Ganga Chowk, Sector-4, Pune').trim());
+      setBizName((localStorage.getItem('business_name') || 'DairyLedger').trim());
+      setBizAddress((localStorage.getItem('business_address') || 'DairyLedger Headquarters, Pune').trim());
       setBizGreeting((localStorage.getItem('whatsapp_greeting') || 'Hello').trim());
       setBizThankYou((localStorage.getItem('whatsapp_thankyou') || 'Please clear the dues. Thank you!').trim());
     }

@@ -4,10 +4,10 @@ import { PWARegister } from '@/components/PWARegister';
 
 export const metadata: Metadata = {
   title: {
-    default: 'Ganga Dairy Farm',
-    template: '%s | Ganga Dairy Farm',
+    default: 'DairyLedger',
+    template: '%s | DairyLedger',
   },
-  description: 'Professional milk billing and customer management system for Ganga Dairy Farm.',
+  description: 'Professional milk billing and customer management system for DairyLedger.',
   manifest: '/manifest.json',
   icons: {
     icon: [
@@ -24,12 +24,12 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'Ganga Dairy',
+    title: 'DairyLedger',
     startupImage: '/icons/apple-touch-icon.png',
   },
-  applicationName: 'Ganga Dairy Farm',
+  applicationName: 'DairyLedger',
   keywords: ['dairy', 'milk', 'billing', 'invoice', 'farm management'],
-  authors: [{ name: 'Ganga Dairy Farm' }],
+  authors: [{ name: 'DairyLedger' }],
   formatDetection: {
     telephone: true,
     email: false,
@@ -74,8 +74,8 @@ export default function RootLayout({
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        <meta name="apple-mobile-web-app-title" content="Ganga Dairy" />
-        <meta name="application-name" content="Ganga Dairy Farm" />
+        <meta name="apple-mobile-web-app-title" content="DairyLedger" />
+        <meta name="application-name" content="DairyLedger" />
         <meta name="msapplication-TileColor" content="#2563eb" />
         <meta name="msapplication-TileImage" content="/icons/icon-144x144.png" />
         <meta name="msapplication-config" content="none" />

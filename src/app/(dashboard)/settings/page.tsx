@@ -15,9 +15,9 @@ export default function SettingsPage() {
   const deleteUserAccount = useAppStore(state => state.deleteUserAccount);
   const currentUser = useAppStore(state => state.currentUser);
 
-  const [businessName, setBusinessName] = useState('Ganga Dairy Farm');
+  const [businessName, setBusinessName] = useState('DairyLedger');
   const [helpline, setHelpline] = useState('+91 98765 43210');
-  const [address, setAddress] = useState('Ganga Chowk, Sector-4, Pune, Maharashtra');
+  const [address, setAddress] = useState('DairyLedger Headquarters, Pune, Maharashtra');
   const [cowRate, setCowRate] = useState('45');
   const [buffaloRate, setBuffaloRate] = useState('60');
   const [mixedRate, setMixedRate] = useState('52');
@@ -38,9 +38,9 @@ export default function SettingsPage() {
   // Load from localStorage on mount
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      setBusinessName(localStorage.getItem('business_name') || 'Ganga Dairy Farm');
+      setBusinessName(localStorage.getItem('business_name') || 'DairyLedger');
       setHelpline(localStorage.getItem('business_phone') || '+91 98765 43210');
-      setAddress(localStorage.getItem('business_address') || 'Ganga Chowk, Sector-4, Pune, Maharashtra');
+      setAddress(localStorage.getItem('business_address') || 'DairyLedger Headquarters, Pune, Maharashtra');
       setCowRate(localStorage.getItem('rate_cow') || '45');
       setBuffaloRate(localStorage.getItem('rate_buffalo') || '60');
       setMixedRate(localStorage.getItem('rate_mixed') || '52');

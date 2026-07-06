@@ -57,7 +57,7 @@ export default function LoginPage() {
         </div>
         <div>
           <h1 className="text-2xl font-extrabold text-slate-800 dark:text-slate-100 tracking-tight">
-            Milk Billing System
+            DairyLedger
           </h1>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-xs">
             Sign in to manage your dairy operations, billing, and customers

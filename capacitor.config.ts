@@ -1,8 +1,8 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.gangadairy.app',
-  appName: 'Milk Billing System',
+  appId: 'com.dairyledger.app',
+  appName: 'DairyLedger',
   webDir: 'out',
   server: {
     androidScheme: 'https',

@@ -1,6 +1,6 @@
 {
-  "name": "Ganga Dairy Farm",
-  "short_name": "GangaDairy",
+  "name": "DairyLedger",
+  "short_name": "DairyLedger",
   "description": "Professional milk billing and customer management system",
   "start_url": "/dashboard/",
   "scope": "/",

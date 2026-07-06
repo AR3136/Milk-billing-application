@@ -48,7 +48,7 @@ export const Sidebar: React.FC = () => {
         <div className="h-16 flex items-center px-6 border-b border-slate-200 dark:border-slate-800">
           <div className="flex items-center gap-2">
             <img src="/logo.png" alt="Logo" className="w-8 h-8 rounded-lg object-contain shadow-md shadow-blue-200 dark:shadow-none" />
-            <span className="font-bold text-slate-800 dark:text-slate-100 tracking-tight text-base">Milk Billing System</span>
+            <span className="font-bold text-slate-800 dark:text-slate-100 tracking-tight text-base">DairyLedger</span>
           </div>
         </div>
         <nav className="flex-1 overflow-y-auto px-4 py-6 space-y-1">
@@ -105,7 +105,7 @@ export const Sidebar: React.FC = () => {
           <div className="h-16 flex items-center justify-between px-6 border-b border-slate-200 dark:border-slate-800">
             <div className="flex items-center gap-2">
               <img src="/logo.png" alt="Logo" className="w-8 h-8 rounded-lg object-contain shadow-md" />
-              <span className="font-bold text-slate-800 dark:text-slate-100 tracking-tight text-sm">Milk Billing System</span>
+              <span className="font-bold text-slate-800 dark:text-slate-100 tracking-tight text-sm">DairyLedger</span>
             </div>
             <button 
               onClick={() => setSidebarOpen(false)}
