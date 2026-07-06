@@ -223,20 +223,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
       const updatedCustomers = customersList.map(c => {
         const cEntries = entriesList.filter(e => e.customerId === c.id);
-        let totalMilk = 0;
-        if (c.milkType === 'both') {
-          const cowQty = cEntries.filter(e => e.milkType === 'cow').reduce((sum, e) => sum + e.quantity, 0);
-          const buffaloQty = cEntries.filter(e => e.milkType === 'buffalo').reduce((sum, e) => sum + e.quantity, 0);
-          const mixedQty = cEntries.filter(e => e.milkType !== 'cow' && e.milkType !== 'buffalo').reduce((sum, e) => sum + e.quantity, 0);
-          totalMilk = Math.floor(
-            (cowQty * (c.rateCow || 0)) + 
-            (buffaloQty * (c.rateBuffalo || 0)) + 
-            (mixedQty * (c.rate || 0))
-          );
-        } else {
-          const totalQty = cEntries.reduce((sum, e) => sum + e.quantity, 0);
-          totalMilk = Math.floor(totalQty * (c.rate || 0));
-        }
+        const totalMilk = cEntries.reduce((sum, e) => sum + (e.amount || 0), 0);
 
         const totalPaid = paymentsList
           .filter(p => p.customerId === c.id)

@@ -35,20 +35,8 @@ export default function BillingPage() {
 
     const totalQuantity = cycleEntries.reduce((sum, e) => sum + e.quantity, 0);
     
-    // Calculate total yield: sum of total liters per milk type multiplied by rate, rounded down
-    let cycleTotalAmount = 0;
-    if (cust.milkType === 'both') {
-      const cowQty = cycleEntries.filter(e => e.milkType === 'cow').reduce((sum, e) => sum + e.quantity, 0);
-      const buffaloQty = cycleEntries.filter(e => e.milkType === 'buffalo').reduce((sum, e) => sum + e.quantity, 0);
-      const mixedQty = cycleEntries.filter(e => e.milkType !== 'cow' && e.milkType !== 'buffalo').reduce((sum, e) => sum + e.quantity, 0);
-      cycleTotalAmount = Math.floor(
-        (cowQty * (cust.rateCow || 0)) + 
-        (buffaloQty * (cust.rateBuffalo || 0)) + 
-        (mixedQty * (cust.rate || 0))
-      );
-    } else {
-      cycleTotalAmount = Math.floor(totalQuantity * (cust.rate || 0));
-    }
+    // Calculate total yield: sum of all amounts for this cycle
+    const cycleTotalAmount = cycleEntries.reduce((sum, e) => sum + (e.amount || 0), 0);
 
     // 2. Fetch payments made during this cycle, deducting credit settlements
     const cyclePaymentsRaw = payments
@@ -63,19 +51,7 @@ export default function BillingPage() {
     const priorEntries = milkEntries.filter(e => e.customerId === cust.id && e.date < startDate);
     const priorQuantity = priorEntries.reduce((sum, e) => sum + e.quantity, 0);
     
-    let priorMilk = 0;
-    if (cust.milkType === 'both') {
-      const cowQty = priorEntries.filter(e => e.milkType === 'cow').reduce((sum, e) => sum + e.quantity, 0);
-      const buffaloQty = priorEntries.filter(e => e.milkType === 'buffalo').reduce((sum, e) => sum + e.quantity, 0);
-      const mixedQty = priorEntries.filter(e => e.milkType !== 'cow' && e.milkType !== 'buffalo').reduce((sum, e) => sum + e.quantity, 0);
-      priorMilk = Math.floor(
-        (cowQty * (cust.rateCow || 0)) + 
-        (buffaloQty * (cust.rateBuffalo || 0)) + 
-        (mixedQty * (cust.rate || 0))
-      );
-    } else {
-      priorMilk = Math.floor(priorQuantity * (cust.rate || 0));
-    }
+    const priorMilk = priorEntries.reduce((sum, e) => sum + (e.amount || 0), 0);
 
     const priorPayments = payments.filter(p => p.customerId === cust.id && p.date < startDate);
     const priorPaidRaw = priorPayments.reduce((sum, p) => sum + p.amount, 0);

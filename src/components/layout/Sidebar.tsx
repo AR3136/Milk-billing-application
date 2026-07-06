@@ -15,7 +15,8 @@ import {
   Settings, 
   Shield, 
   UserCircle,
-  X
+  X,
+  Clock as HistoryIcon
 } from 'lucide-react';
 
 export const Sidebar: React.FC = () => {
@@ -28,6 +29,7 @@ export const Sidebar: React.FC = () => {
     { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
     { name: 'Customers', path: '/customers', icon: Users },
     { name: 'Milk Entry', path: '/milk-entry', icon: Milk },
+    { name: 'Bulk Historical Entry', path: '/milk-entry/bulk-historical', icon: HistoryIcon },
     { name: 'Billing', path: '/billing', icon: Receipt },
     { name: 'Payments', path: '/payments', icon: CreditCard },
     { name: 'Reports', path: '/reports', icon: BarChart3 },
@@ -37,39 +39,70 @@ export const Sidebar: React.FC = () => {
     { name: 'Profile', path: '/profile', icon: UserCircle },
   ];
 
+  const bizName = React.useMemo(() => {
+    if (typeof window !== 'undefined') {
+      return (localStorage.getItem('business_name') || 'DairyLedger').trim();
+    }
+    return 'DairyLedger';
+  }, []);
+
+  const getIsActive = (itemPath: string): boolean => {
+    const normalizedPathname = (pathname || '').replace(/\/$/, '');
+    const normalizedItemPath = itemPath.replace(/\/$/, '');
+    if (normalizedItemPath === '/milk-entry') {
+      return normalizedPathname === '/milk-entry';
+    }
+    return (
+      normalizedPathname === normalizedItemPath ||
+      normalizedPathname.startsWith(normalizedItemPath + '/')
+    );
+  };
+
   const initials = currentUser?.name
     ? currentUser.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
     : '??';
 
+  const displayUserName = currentUser?.name ? currentUser.name : 'User';
+  const displayUserEmail = currentUser?.email ? currentUser.email : '';
+
+  const NavLink = ({ item, onClick }: { item: typeof menuItems[number]; onClick?: () => void }) => {
+    const Icon = item.icon;
+    const isActive = getIsActive(item.path);
+    return (
+      <Link
+        href={item.path}
+        onClick={onClick}
+        className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
+          isActive
+            ? 'bg-blue-50 dark:bg-blue-950/20 text-blue-600 dark:text-blue-400 border-l-4 border-l-blue-500'
+            : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-800 dark:hover:text-slate-100'
+        }`}
+      >
+        <Icon
+          className={`w-5 h-5${isActive ? ' text-blue-600 dark:text-blue-400' : ''}`}
+          aria-hidden="true"
+        />
+        {item.name}
+      </Link>
+    );
+  };
+
   return (
     <>
       {/* Desktop Sidebar Layout */}
-      <aside className="hidden md:flex flex-col w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 h-screen sticky top-0">
+      <aside suppressHydrationWarning className="hidden md:flex flex-col w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 h-screen sticky top-0">
         <div className="h-16 flex items-center px-6 border-b border-slate-200 dark:border-slate-800">
           <div className="flex items-center gap-2">
             <img src="/logo.png" alt="Logo" className="w-8 h-8 rounded-lg object-contain shadow-md shadow-blue-200 dark:shadow-none" />
-            <span className="font-bold text-slate-800 dark:text-slate-100 tracking-tight text-base">DairyLedger</span>
+            <span className="font-bold text-slate-800 dark:text-slate-100 tracking-tight text-base">
+              {bizName}
+            </span>
           </div>
         </div>
-        <nav className="flex-1 overflow-y-auto px-4 py-6 space-y-1">
-          {menuItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = pathname === item.path || pathname.startsWith(item.path + '/');
-            return (
-              <Link
-                key={item.path}
-                href={item.path}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
-                  isActive 
-                    ? 'bg-blue-50 dark:bg-blue-950/20 text-blue-600 dark:text-blue-400 border-l-4 border-l-blue-500' 
-                    : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-800 dark:hover:text-slate-100'
-                }`}
-              >
-                <Icon className={`w-5 h-5 ${isActive ? 'text-blue-600 dark:text-blue-400' : ''}`} />
-                {item.name}
-              </Link>
-            );
-          })}
+        <nav suppressHydrationWarning className="flex-1 overflow-y-auto px-4 py-6 space-y-1">
+          {menuItems.map((item) => (
+            <NavLink key={item.path} item={item} />
+          ))}
         </nav>
         <div className="p-4 border-t border-slate-200 dark:border-slate-800">
           <div className="flex items-center gap-3 p-2 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
@@ -77,27 +110,24 @@ export const Sidebar: React.FC = () => {
               {initials}
             </div>
             <div className="overflow-hidden">
-              <h5 className="text-xs font-semibold text-slate-800 dark:text-slate-100 truncate">{currentUser?.name || 'User'}</h5>
-              <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate">{currentUser?.email || ''}</p>
+              <h5 className="text-xs font-semibold text-slate-800 dark:text-slate-100 truncate">{displayUserName}</h5>
+              <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate">{displayUserEmail}</p>
             </div>
           </div>
         </div>
       </aside>
 
       {/* Mobile Drawer (Sidebar Overlay) */}
-      <div 
+      <div
         className={`fixed inset-0 z-50 md:hidden transition-all duration-300 ${
           isSidebarOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
         }`}
       >
-        {/* Transparent backdrop overlay */}
-        <div 
+        <div
           className="absolute inset-0 bg-slate-950/40 backdrop-blur-xs"
           onClick={() => setSidebarOpen(false)}
         />
-        
-        {/* Drawer content panel */}
-        <aside 
+        <aside
           className={`absolute top-0 left-0 bottom-0 w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col transition-transform duration-300 ${
             isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
           }`}
@@ -105,9 +135,11 @@ export const Sidebar: React.FC = () => {
           <div className="h-16 flex items-center justify-between px-6 border-b border-slate-200 dark:border-slate-800">
             <div className="flex items-center gap-2">
               <img src="/logo.png" alt="Logo" className="w-8 h-8 rounded-lg object-contain shadow-md" />
-              <span className="font-bold text-slate-800 dark:text-slate-100 tracking-tight text-sm">DairyLedger</span>
+              <span className="font-bold text-slate-800 dark:text-slate-100 tracking-tight text-sm">
+                {bizName}
+              </span>
             </div>
-            <button 
+            <button
               onClick={() => setSidebarOpen(false)}
               className="p-1 rounded-lg text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800"
             >
@@ -115,25 +147,9 @@ export const Sidebar: React.FC = () => {
             </button>
           </div>
           <nav className="flex-1 overflow-y-auto px-4 py-6 space-y-1">
-            {menuItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = pathname === item.path || pathname.startsWith(item.path + '/');
-              return (
-                <Link
-                  key={item.path}
-                  href={item.path}
-                  onClick={() => setSidebarOpen(false)}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
-                    isActive 
-                      ? 'bg-blue-50 dark:bg-blue-950/20 text-blue-600 dark:text-blue-400 border-l-4 border-l-blue-500' 
-                      : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-800 dark:hover:text-slate-100'
-                  }`}
-                >
-                  <Icon className={`w-5 h-5 ${isActive ? 'text-blue-600 dark:text-blue-400' : ''}`} />
-                  {item.name}
-                </Link>
-              );
-            })}
+            {menuItems.map((item) => (
+              <NavLink key={item.path} item={item} onClick={() => setSidebarOpen(false)} />
+            ))}
           </nav>
           <div className="p-4 border-t border-slate-200 dark:border-slate-800">
             <div className="flex items-center gap-3 p-2 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
@@ -141,8 +157,8 @@ export const Sidebar: React.FC = () => {
                 {initials}
               </div>
               <div className="overflow-hidden">
-                <h5 className="text-xs font-semibold text-slate-800 dark:text-slate-100 truncate">{currentUser?.name || 'User'}</h5>
-                <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate">{currentUser?.email || ''}</p>
+                <h5 className="text-xs font-semibold text-slate-800 dark:text-slate-100 truncate">{displayUserName}</h5>
+                <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate">{displayUserEmail}</p>
               </div>
             </div>
           </div>

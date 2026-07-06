@@ -46,21 +46,21 @@ export const BillInvoiceView: React.FC<BillInvoiceViewProps> = ({ bill, onClose 
   const mixedEntries = cycleEntries.filter(e => e.milkType !== 'cow' && e.milkType !== 'buffalo');
 
   const cowQty = cowEntries.reduce((sum, e) => sum + e.quantity, 0);
-  const cowRate = matchedCust ? (matchedCust.milkType === 'both' ? matchedCust.rateCow : matchedCust.rate) : 0;
-  const cowAmt = Math.floor(cowQty * cowRate);
+  const cowAmt = cowEntries.reduce((sum, e) => sum + (e.amount || 0), 0);
+  const cowRate = cowQty > 0 ? (cowAmt / cowQty) : 0;
 
   const buffaloQty = buffaloEntries.reduce((sum, e) => sum + e.quantity, 0);
-  const buffaloRate = matchedCust ? (matchedCust.milkType === 'both' ? matchedCust.rateBuffalo : matchedCust.rate) : 0;
-  const buffaloAmt = Math.floor(buffaloQty * buffaloRate);
+  const buffaloAmt = buffaloEntries.reduce((sum, e) => sum + (e.amount || 0), 0);
+  const buffaloRate = buffaloQty > 0 ? (buffaloAmt / buffaloQty) : 0;
 
   const mixedQty = mixedEntries.reduce((sum, e) => sum + e.quantity, 0);
-  const mixedRate = matchedCust?.rate || 0;
-  const mixedAmt = Math.floor(mixedQty * mixedRate);
+  const mixedAmt = mixedEntries.reduce((sum, e) => sum + (e.amount || 0), 0);
+  const mixedRate = mixedQty > 0 ? (mixedAmt / mixedQty) : 0;
 
   // Use computed cycle values, with fallback to bill defaults if entries are not yet synced/empty
   const displayQty = cycleEntries.length > 0 ? cycleEntries.reduce((sum, e) => sum + e.quantity, 0) : bill.total_quantity;
-  const displayAmt = cycleEntries.length > 0 ? Math.floor(cowAmt + buffaloAmt + mixedAmt) : bill.total_amount;
-  const avgRate = matchedCust?.rate || (displayQty > 0 ? (displayAmt / displayQty) : 0);
+  const displayAmt = cycleEntries.length > 0 ? (cowAmt + buffaloAmt + mixedAmt) : bill.total_amount;
+  const avgRate = displayQty > 0 ? (displayAmt / displayQty) : 0;
 
   // Clean quantities to avoid floating point issues (e.g. 0.8500000000000001 L)
   const cleanCowQty = parseFloat(cowQty.toFixed(2));

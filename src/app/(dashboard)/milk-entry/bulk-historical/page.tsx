@@ -38,7 +38,7 @@ const STATUS_CONFIG: Record<EntryStatus, { label: string; color: string; short: 
 interface ShiftData {
   status: EntryStatus;
   pricingMethod: PricingMethod;
-  milkType: 'cow' | 'buffalo' | 'mixed';
+  milkType: MilkType;
   quantity: string;
   rate: string;
   amount: string;
@@ -74,13 +74,13 @@ function computeAmountForShift(s: ShiftData): number {
 }
 
 function makeDefaultShift(
-  milkType: 'cow' | 'buffalo' | 'mixed',
+  milkType: MilkType,
   rate: string,
   existingId: string | null = null,
   isWeekend = false,
 ): ShiftData {
   return {
-    status: isWeekend ? 'holiday' : 'normal',
+    status: 'normal',
     pricingMethod: 'by_quantity',
     milkType,
     quantity: '',
@@ -94,6 +94,7 @@ function makeDefaultShift(
 
 function MilkEntrySubNav() {
   const pathname = usePathname();
+  const normalizedPathname = pathname.replace(/\/$/, '');
   const tabs = [
     { href: '/milk-entry',            label: 'Daily Entry' },
     { href: '/milk-entry/bulk-historical', label: 'Bulk Historical Entry' },
@@ -105,7 +106,7 @@ function MilkEntrySubNav() {
           key={tab.href}
           href={tab.href}
           className={`px-4 py-2 rounded-lg text-xs font-semibold transition-all duration-200 ${
-            pathname === tab.href
+            normalizedPathname === tab.href.replace(/\/$/, '')
               ? 'bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 shadow-sm'
               : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
           }`}
@@ -190,6 +191,7 @@ function ShiftCell({ shift, shiftKey, onChange, disabled }: ShiftCellProps) {
             <option value="cow">🐄 Cow</option>
             <option value="buffalo">🐃 Buffalo</option>
             <option value="mixed">🥛 Mixed</option>
+            <option value="both">🥛 Both (Cow & Buffalo)</option>
           </select>
 
           {/* Quantity + Rate (by_quantity mode) */}
@@ -380,16 +382,29 @@ export default function BulkHistoricalEntryPage() {
   const fetchData  = useAppStore(s => s.fetchData);
   const currentUser = useAppStore(s => s.currentUser);
 
-  const now = new Date();
-
   // ── Controls state ──────────────────────────────────────────────────────────
   const [custSearch, setCustSearch]     = useState('');
   const [custOpen, setCustOpen]         = useState(false);
   const [selectedCustId, setSelectedCustId] = useState('');
-  const [month, setMonth]   = useState(now.getMonth() === 0 ? 12 : now.getMonth()); // previous month
-  const [year, setYear]     = useState(now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear());
-  const [defaultMilkType, setDefaultMilkType] = useState<'cow' | 'buffalo' | 'mixed'>('cow');
+  const [month, setMonth]   = useState(1); // dummy initial value to prevent hydration mismatch
+  const [year, setYear]     = useState(2025);
+  const [defaultMilkType, setDefaultMilkType] = useState<MilkType>('both');
   const [defaultRate, setDefaultRate]   = useState('');
+  const [defaultPricingMethod, setDefaultPricingMethod] = useState<'by_quantity' | 'by_amount'>('by_quantity');
+  const [defaultValue, setDefaultValue] = useState('');
+  const [applyShift, setApplyShift] = useState<'morning' | 'evening'>('morning');
+  // 'Both' milk type — separate cow/buffalo values
+  const [defaultCowRate, setDefaultCowRate]         = useState('');
+  const [defaultCowValue, setDefaultCowValue]       = useState('');
+  const [defaultBuffaloRate, setDefaultBuffaloRate] = useState('');
+  const [defaultBuffaloValue, setDefaultBuffaloValue] = useState('');
+
+  // Hydration-safe date initialization
+  useEffect(() => {
+    const now = new Date();
+    setMonth(now.getMonth() === 0 ? 12 : now.getMonth());
+    setYear(now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear());
+  }, []);
 
   // ── Table state ─────────────────────────────────────────────────────────────
   const [rows, setRows]                 = useState<DayRow[]>([]);
@@ -414,13 +429,14 @@ export default function BulkHistoricalEntryPage() {
   useEffect(() => {
     if (!selectedCust) return;
     if (selectedCust.milkType === 'both') {
-      setDefaultMilkType('cow');
-      setDefaultRate(String(selectedCust.rateCow || selectedCust.rate || ''));
+      setDefaultMilkType('both');
+      setDefaultCowRate(String(selectedCust.rateCow || selectedCust.rate || ''));
+      setDefaultBuffaloRate(String(selectedCust.rateBuffalo || selectedCust.rate || ''));
     } else if (selectedCust.milkType === 'mixed') {
       setDefaultMilkType('mixed');
       setDefaultRate(String(selectedCust.rate || ''));
     } else {
-      setDefaultMilkType(selectedCust.milkType as 'cow' | 'buffalo');
+      setDefaultMilkType(selectedCust.milkType as MilkType);
       setDefaultRate(String(selectedCust.rate || ''));
     }
     setIsMonthLoaded(false);
@@ -482,20 +498,81 @@ export default function BulkHistoricalEntryPage() {
     setRows(prev => prev.map(r => ({ ...r, selected: !allSel })));
   };
 
-  // ── Apply defaults to all rows ──────────────────────────────────────────────
+  // ── Apply defaults to selected rows ──────────────────────────────────────────
   const applyDefaultsToAll = () => {
-    setRows(prev => prev.map(row => {
-      const applyToShift = (s: ShiftData): ShiftData => {
+    const countSelected = rows.filter(r => r.selected).length;
+    if (countSelected === 0) {
+      toast.error('Select at least one row using the checkboxes first.');
+      return;
+    }
+
+    if (defaultMilkType === 'both') {
+      // 'Both' mode: Morning → Cow, Evening → Buffalo with separate values
+      const cowRate  = parseFloat(defaultCowRate)  || 0;
+      const cowVal   = parseFloat(defaultCowValue)  || 0;
+      const bufRate  = parseFloat(defaultBuffaloRate) || 0;
+      const bufVal   = parseFloat(defaultBuffaloValue) || 0;
+
+      const applyToMorning = (s: ShiftData): ShiftData => {
         if (s.existingId || s.status !== 'normal') return s;
-        const updated = { ...s, milkType: defaultMilkType, rate: defaultRate };
-        if (s.pricingMethod === 'by_quantity' && s.quantity) {
-          updated.amount = String(Math.floor(parseFloat(s.quantity) * parseFloat(defaultRate || '0')));
+        const updated = { ...s, milkType: 'cow' as MilkType, rate: defaultCowRate, pricingMethod: defaultPricingMethod };
+        if (defaultPricingMethod === 'by_quantity') {
+          updated.quantity = defaultCowValue;
+          updated.amount   = cowVal > 0 && cowRate > 0 ? String(Math.floor(cowVal * cowRate)) : '';
+        } else {
+          updated.amount = defaultCowValue; updated.quantity = ''; updated.rate = '';
         }
         return updated;
       };
-      return { ...row, morning: applyToShift(row.morning), evening: applyToShift(row.evening) };
-    }));
-    toast.success('Applied default milk type and rate to all rows.');
+
+      const applyToEvening = (s: ShiftData): ShiftData => {
+        if (s.existingId || s.status !== 'normal') return s;
+        const updated = { ...s, milkType: 'buffalo' as MilkType, rate: defaultBuffaloRate, pricingMethod: defaultPricingMethod };
+        if (defaultPricingMethod === 'by_quantity') {
+          updated.quantity = defaultBuffaloValue;
+          updated.amount   = bufVal > 0 && bufRate > 0 ? String(Math.floor(bufVal * bufRate)) : '';
+        } else {
+          updated.amount = defaultBuffaloValue; updated.quantity = ''; updated.rate = '';
+        }
+        return updated;
+      };
+
+      setRows(prev => prev.map(row => {
+        if (!row.selected) return row;
+        return {
+          ...row,
+          morning: applyShift === 'morning' ? applyToMorning(row.morning) : row.morning,
+          evening: applyShift === 'evening' ? applyToEvening(row.evening) : row.evening,
+        };
+      }));
+    } else {
+      // Single milk type mode
+      const val  = parseFloat(defaultValue) || 0;
+      const rate = parseFloat(defaultRate)  || 0;
+
+      const applyToShift = (s: ShiftData): ShiftData => {
+        if (s.existingId || s.status !== 'normal') return s;
+        const updated = { ...s, milkType: defaultMilkType, rate: defaultRate, pricingMethod: defaultPricingMethod };
+        if (defaultPricingMethod === 'by_quantity') {
+          updated.quantity = defaultValue;
+          updated.amount   = val > 0 && rate > 0 ? String(Math.floor(val * rate)) : '';
+        } else {
+          updated.amount = defaultValue; updated.quantity = ''; updated.rate = '';
+        }
+        return updated;
+      };
+
+      setRows(prev => prev.map(row => {
+        if (!row.selected) return row;
+        return {
+          ...row,
+          morning: applyShift === 'morning' ? applyToShift(row.morning) : row.morning,
+          evening: applyShift === 'evening' ? applyToShift(row.evening) : row.evening,
+        };
+      }));
+    }
+
+    toast.success(`Applied defaults to ${countSelected} selected rows.`);
   };
 
   // ── Load month: generate rows + check existing ──────────────────────────────
@@ -536,12 +613,14 @@ export default function BulkHistoricalEntryPage() {
           dayNum: day,
           dayName: DAY_NAMES[dayOfWeek],
           morning: makeDefaultShift(
-            defaultMilkType, defaultRate,
+            defaultMilkType === 'both' ? 'cow' : defaultMilkType,
+            defaultMilkType === 'both' ? defaultCowRate : defaultRate,
             existingMap[`${dateStr}-morning`] ?? null,
             isWeekend,
           ),
           evening: makeDefaultShift(
-            defaultMilkType, defaultRate,
+            defaultMilkType === 'both' ? 'buffalo' : defaultMilkType,
+            defaultMilkType === 'both' ? defaultBuffaloRate : defaultRate,
             existingMap[`${dateStr}-evening`] ?? null,
             isWeekend,
           ),
@@ -574,9 +653,32 @@ export default function BulkHistoricalEntryPage() {
     if (!currentUser || !selectedCust) return null;
     const s = row[shiftKey] as ShiftData;
 
-    // Skip: existing, non-normal status, or empty values
+    // Skip: existing or non-normal status
     if (s.existingId) return null;
     if (s.status !== 'normal') return null;
+
+    // If row is not selected/ticked, save entry as zero (0 liters)
+    if (!row.selected) {
+      let rate = parseFloat(s.rate);
+      if (isNaN(rate) || rate <= 0) {
+        if (s.milkType === 'cow') {
+          rate = parseFloat(defaultCowRate) || parseFloat(defaultRate) || selectedCust.rateCow || selectedCust.rate || 0;
+        } else if (s.milkType === 'buffalo') {
+          rate = parseFloat(defaultBuffaloRate) || parseFloat(defaultRate) || selectedCust.rateBuffalo || selectedCust.rate || 0;
+        } else {
+          rate = parseFloat(defaultRate) || selectedCust.rate || 0;
+        }
+      }
+      return {
+        customer_id: selectedCustId,
+        user_id: currentUser.id,
+        date: row.date,
+        shift: shiftKey,
+        quantity: 0,
+        rate_applied: rate,
+        milk_type: s.milkType,
+      };
+    }
 
     if (s.pricingMethod === 'by_quantity') {
       const qty  = parseFloat(s.quantity);
@@ -734,8 +836,9 @@ export default function BulkHistoricalEntryPage() {
 
   // ── Year options ────────────────────────────────────────────────────────────
   const yearOptions = useMemo(() => {
+    const currentYear = new Date().getFullYear();
     const opts: number[] = [];
-    for (let y = now.getFullYear() - 4; y <= now.getFullYear(); y++) opts.push(y);
+    for (let y = currentYear - 4; y <= currentYear; y++) opts.push(y);
     return opts;
   }, []);
 
@@ -863,27 +966,134 @@ export default function BulkHistoricalEntryPage() {
                 <option value="cow">🐄 Cow</option>
                 <option value="buffalo">🐃 Buffalo</option>
                 <option value="mixed">🥛 Mixed</option>
+                <option value="both">🥛 Both (Cow & Buffalo)</option>
               </select>
             </div>
+            
+            {/* ── Conditional inputs: 'both' gets split cow+buffalo panels, others get single input ── */}
+            {defaultMilkType === 'both' ? (
+              <div className="flex flex-wrap gap-3 items-end p-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl">
+                {/* Cow panel */}
+                <div className="space-y-1">
+                  <div className="flex items-center gap-1 mb-1">
+                    <span className="text-sm">🐄</span>
+                    <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider">Cow (Morning)</span>
+                  </div>
+                  {defaultPricingMethod === 'by_quantity' && (
+                    <div>
+                      <div className="text-[9px] text-slate-400 font-semibold uppercase mb-0.5">Rate (₹/L)</div>
+                      <input type="number" step="0.50" min="0" value={defaultCowRate}
+                        onChange={e => setDefaultCowRate(e.target.value)} placeholder="e.g. 60"
+                        className="block w-20 px-2 py-1.5 bg-white dark:bg-slate-800 border border-blue-200 dark:border-blue-800 rounded-lg text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    </div>
+                  )}
+                  <div>
+                    <div className="text-[9px] text-slate-400 font-semibold uppercase mb-0.5">
+                      {defaultPricingMethod === 'by_quantity' ? 'Qty (L)' : 'Amount (₹)'}
+                    </div>
+                    <input type="number" step={defaultPricingMethod === 'by_quantity' ? '0.1' : '1'} min="0"
+                      value={defaultCowValue} onChange={e => setDefaultCowValue(e.target.value)}
+                      placeholder={defaultPricingMethod === 'by_quantity' ? '2.5' : '150'}
+                      className="block w-20 px-2 py-1.5 bg-white dark:bg-slate-800 border border-blue-200 dark:border-blue-800 rounded-lg text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  </div>
+                  {defaultPricingMethod === 'by_quantity' && defaultCowValue && defaultCowRate && (
+                    <div className="text-[10px] font-bold text-blue-600 dark:text-blue-400">
+                      = ₹{Math.floor(parseFloat(defaultCowValue) * parseFloat(defaultCowRate))}
+                    </div>
+                  )}
+                </div>
+
+                <div className="w-px h-14 bg-slate-200 dark:bg-slate-700 self-center hidden sm:block" />
+
+                {/* Buffalo panel */}
+                <div className="space-y-1">
+                  <div className="flex items-center gap-1 mb-1">
+                    <span className="text-sm">🐃</span>
+                    <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider">Buffalo (Evening)</span>
+                  </div>
+                  {defaultPricingMethod === 'by_quantity' && (
+                    <div>
+                      <div className="text-[9px] text-slate-400 font-semibold uppercase mb-0.5">Rate (₹/L)</div>
+                      <input type="number" step="0.50" min="0" value={defaultBuffaloRate}
+                        onChange={e => setDefaultBuffaloRate(e.target.value)} placeholder="e.g. 70"
+                        className="block w-20 px-2 py-1.5 bg-white dark:bg-slate-800 border border-amber-200 dark:border-amber-800 rounded-lg text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-500" />
+                    </div>
+                  )}
+                  <div>
+                    <div className="text-[9px] text-slate-400 font-semibold uppercase mb-0.5">
+                      {defaultPricingMethod === 'by_quantity' ? 'Qty (L)' : 'Amount (₹)'}
+                    </div>
+                    <input type="number" step={defaultPricingMethod === 'by_quantity' ? '0.1' : '1'} min="0"
+                      value={defaultBuffaloValue} onChange={e => setDefaultBuffaloValue(e.target.value)}
+                      placeholder={defaultPricingMethod === 'by_quantity' ? '2.0' : '140'}
+                      className="block w-20 px-2 py-1.5 bg-white dark:bg-slate-800 border border-amber-200 dark:border-amber-800 rounded-lg text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-500" />
+                  </div>
+                  {defaultPricingMethod === 'by_quantity' && defaultBuffaloValue && defaultBuffaloRate && (
+                    <div className="text-[10px] font-bold text-amber-600 dark:text-amber-400">
+                      = ₹{Math.floor(parseFloat(defaultBuffaloValue) * parseFloat(defaultBuffaloRate))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : (
+              /* ── Single milk type: Rate + Qty/Amount ── */
+              <>
+                {defaultPricingMethod === 'by_quantity' && (
+                  <div>
+                    <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Default Rate (₹/L)</label>
+                    <input type="number" step="0.50" min="0" value={defaultRate}
+                      onChange={e => setDefaultRate(e.target.value)} placeholder="e.g. 60"
+                      className="mt-1 block w-24 px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  </div>
+                )}
+                <div>
+                  <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">
+                    {defaultPricingMethod === 'by_quantity' ? 'Liters (L)' : 'Amount (₹)'}
+                  </label>
+                  <input type="number" step={defaultPricingMethod === 'by_quantity' ? '0.1' : '1'} min="0"
+                    value={defaultValue} onChange={e => setDefaultValue(e.target.value)}
+                    placeholder={defaultPricingMethod === 'by_quantity' ? 'e.g. 2.5' : 'e.g. 150'}
+                    className="mt-1 block w-28 px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                </div>
+              </>
+            )}
+
             <div>
-              <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Default Rate (₹/L)</label>
-              <input
-                type="number"
-                step="0.50"
-                min="0"
-                value={defaultRate}
-                onChange={e => setDefaultRate(e.target.value)}
-                placeholder="e.g. 60"
-                className="mt-1 block w-24 px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
+              <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Fill Mode</label>
+              <select
+                value={defaultPricingMethod}
+                onChange={e => {
+                  setDefaultPricingMethod(e.target.value as any);
+                  setDefaultValue('');
+                  setDefaultCowValue('');
+                  setDefaultBuffaloValue('');
+                }}
+                className="mt-1 block px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-100 focus:outline-none"
+              >
+                <option value="by_quantity">By Qty (Liters)</option>
+                <option value="by_amount">By Amount (Rupees)</option>
+              </select>
             </div>
+
+            <div>
+              <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Target Shift</label>
+              <select
+                value={applyShift}
+                onChange={e => setApplyShift(e.target.value as any)}
+                className="mt-1 block px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-100 focus:outline-none"
+              >
+                <option value="morning">☀️ Morning Only</option>
+                <option value="evening">🌙 Evening Only</option>
+              </select>
+            </div>
+
             <Button
               variant="outline"
               onClick={applyDefaultsToAll}
               disabled={!isMonthLoaded || isSaving}
-              className="text-xs py-2 px-3 rounded-xl"
+              className="text-xs py-2 px-4 rounded-xl font-bold border-blue-200 text-blue-600 hover:bg-blue-50 dark:border-blue-900 dark:text-blue-400 dark:hover:bg-blue-950/20"
             >
-              Apply to All Rows
+              Fill Selected Rows
             </Button>
 
             {/* Load month button — right-aligned */}

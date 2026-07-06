@@ -24,16 +24,19 @@ export default function MilkEntryPage() {
   const deleteMilkEntry = useAppStore((state) => state.deleteMilkEntry);
   const addPayment = useAppStore((state) => state.addPayment);
 
-  const today = new Date().toISOString().split('T')[0];
   const [customerId, setCustomerId] = useState('');
   const [quantity, setQuantity] = useState('');
   const [entryMode, setEntryMode] = useState<'liters' | 'rupees'>('liters');
   const [shift, setShift] = useState<'morning' | 'evening'>('morning');
-  const [date, setDate] = useState(today);
+  const [date, setDate] = useState(''); // Initialized in useEffect to avoid hydration mismatch
   const [entryMilkType, setEntryMilkType] = useState<'cow' | 'buffalo'>('cow');
   const [isSaving, setIsSaving] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentAmount, setPaymentAmount] = useState<number>(0);
+
+  useEffect(() => {
+    setDate(new Date().toISOString().split('T')[0]);
+  }, []);
 
   // Deletion States
   const [entryToDelete, setEntryToDelete] = useState<string | null>(null);
@@ -206,6 +209,7 @@ export default function MilkEntryPage() {
   };
 
   const pathname = usePathname();
+  const normalizedPathname = pathname.replace(/\/$/, '');
   const tabs = [
     { href: '/milk-entry',            label: 'Daily Entry' },
     { href: '/milk-entry/bulk-historical', label: 'Bulk Historical Entry' },
@@ -219,7 +223,7 @@ export default function MilkEntryPage() {
             key={tab.href}
             href={tab.href}
             className={`px-4 py-2 rounded-lg text-xs font-semibold transition-all duration-200 ${
-              pathname === tab.href
+              normalizedPathname === tab.href.replace(/\/$/, '')
                 ? 'bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 shadow-sm'
                 : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
             }`}
