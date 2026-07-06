@@ -537,12 +537,13 @@ export default function BulkHistoricalEntryPage() {
         return updated;
       };
 
+      // In 'both' mode always fill BOTH shifts simultaneously
       setRows(prev => prev.map(row => {
         if (!row.selected) return row;
         return {
           ...row,
-          morning: applyShift === 'morning' ? applyToMorning(row.morning) : row.morning,
-          evening: applyShift === 'evening' ? applyToEvening(row.evening) : row.evening,
+          morning: applyToMorning(row.morning),
+          evening: applyToEvening(row.evening),
         };
       }));
     } else {
@@ -1075,17 +1076,20 @@ export default function BulkHistoricalEntryPage() {
               </select>
             </div>
 
-            <div>
-              <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Target Shift</label>
-              <select
-                value={applyShift}
-                onChange={e => setApplyShift(e.target.value as any)}
-                className="mt-1 block px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-100 focus:outline-none"
-              >
-                <option value="morning">☀️ Morning Only</option>
-                <option value="evening">🌙 Evening Only</option>
-              </select>
-            </div>
+            {/* Target Shift — hidden for 'both' mode since both shifts are always filled together */}
+            {defaultMilkType !== 'both' && (
+              <div>
+                <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Target Shift</label>
+                <select
+                  value={applyShift}
+                  onChange={e => setApplyShift(e.target.value as any)}
+                  className="mt-1 block px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-100 focus:outline-none"
+                >
+                  <option value="morning">☀️ Morning Only</option>
+                  <option value="evening">🌙 Evening Only</option>
+                </select>
+              </div>
+            )}
 
             <Button
               variant="outline"

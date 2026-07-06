@@ -163,7 +163,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         .select('*')
         .eq('user_id', user.id)
         .order('date', { ascending: false })
-        .limit(200);
+        .limit(2000);
 
       if (entryError) console.error('Fetch entries error:', entryError.message);
 
