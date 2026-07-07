@@ -1054,7 +1054,7 @@ export default function BulkHistoricalEntryPage() {
                 <div className="space-y-1">
                   <div className="flex items-center gap-1 mb-1">
                     <span className="text-sm">🐄</span>
-                    <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider">Cow (Morning)</span>
+                    <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider">Cow</span>
                   </div>
                   {defaultPricingMethod === 'by_quantity' && (
                     <div>
@@ -1086,7 +1086,7 @@ export default function BulkHistoricalEntryPage() {
                 <div className="space-y-1">
                   <div className="flex items-center gap-1 mb-1">
                     <span className="text-sm">🐃</span>
-                    <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider">Buffalo (Evening)</span>
+                    <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider">Buffalo</span>
                   </div>
                   {defaultPricingMethod === 'by_quantity' && (
                     <div>
