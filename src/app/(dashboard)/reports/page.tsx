@@ -221,18 +221,34 @@ export default function ReportsPage() {
             <div className="overflow-x-auto border border-slate-100 dark:border-slate-800 rounded-xl max-h-[500px]">
               <table className="w-full text-left border-collapse text-[10px] min-w-[500px]">
                 <thead>
+                  {/* Row 1: Merged Names */}
                   <tr className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 uppercase font-semibold sticky top-0 z-20">
-                    <th className="py-2.5 px-2 w-20 sticky left-0 bg-slate-50 dark:bg-slate-900 border-r border-slate-250 dark:border-slate-800 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">Date</th>
+                    <th rowSpan={2} className="py-2.5 px-2 w-20 sticky left-0 bg-slate-50 dark:bg-slate-900 border-r border-slate-250 dark:border-slate-800 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] align-middle">Date</th>
                     {customers.map(cust => (
-                      <th key={cust.id} className="py-2.5 px-2 text-center border-r border-slate-200 dark:border-slate-800 w-24 truncate">{cust.name}</th>
+                      <th key={cust.id} colSpan={2} className="py-2 px-2 text-center border-r border-slate-200 dark:border-slate-800 text-[10px] font-bold truncate">
+                        {cust.name}
+                      </th>
                     ))}
-                    <th className="py-2.5 px-2 text-right w-24">Total</th>
+                    <th colSpan={2} className="py-2 px-2 text-center border-r border-slate-200 dark:border-slate-800 text-[10px] font-bold">
+                      Total
+                    </th>
+                  </tr>
+                  {/* Row 2: Sub-headers */}
+                  <tr className="bg-slate-100 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 text-[8px] font-bold text-slate-500 uppercase">
+                    {customers.map(cust => (
+                      <React.Fragment key={`sub-${cust.id}`}>
+                        <th className="py-1.5 px-1 text-center border-r border-slate-200 dark:border-slate-800 font-semibold w-12">Cow</th>
+                        <th className="py-1.5 px-1 text-center border-r border-slate-200 dark:border-slate-800 font-semibold w-12">Buffalo</th>
+                      </React.Fragment>
+                    ))}
+                    <th className="py-1.5 px-1 text-center border-r border-slate-200 dark:border-slate-800 font-semibold w-12 text-blue-600">Cow</th>
+                    <th className="py-1.5 px-1 text-center border-r border-slate-200 dark:border-slate-800 font-semibold w-12 text-blue-600">Buffalo</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-150 dark:divide-slate-800">
                   {dateRangeList.map((date) => {
-                    let dayTotalQty = 0;
-                    // Keep layout compact on screen: just display '16 Jun'
+                    let totalCow = 0;
+                    let totalBuffalo = 0;
                     const label = new Date(date).toLocaleDateString('en-IN', {
                       day: '2-digit',
                       month: 'short',
@@ -247,20 +263,40 @@ export default function ReportsPage() {
                           const dayEntries = filteredEntries.filter(
                             (e) => e.customerId === cust.id && e.date === date
                           );
-                          const totalQty = dayEntries.reduce((sum, e) => sum + e.quantity, 0);
-                          dayTotalQty += totalQty;
+                          const cowQty = dayEntries
+                            .filter(e => e.milkType === 'cow' || e.milkType === 'mixed')
+                            .reduce((sum, e) => sum + e.quantity, 0);
+                          const buffaloQty = dayEntries
+                            .filter(e => e.milkType === 'buffalo')
+                            .reduce((sum, e) => sum + e.quantity, 0);
+
+                          totalCow += cowQty;
+                          totalBuffalo += buffaloQty;
+
                           return (
-                            <td key={cust.id} className="py-2 px-2 text-center border-r border-slate-200 dark:border-slate-800">
-                              {totalQty > 0 ? (
-                                <span className="font-bold text-slate-900 dark:text-slate-100">{totalQty.toFixed(1)} L</span>
-                              ) : (
-                                <span className="text-slate-350 dark:text-slate-650 font-medium">0 L</span>
-                              )}
-                            </td>
+                            <React.Fragment key={`${cust.id}-${date}`}>
+                              <td className="py-2 px-1 text-center border-r border-slate-200 dark:border-slate-800">
+                                {cowQty > 0 ? (
+                                  <span className="font-bold text-slate-905 dark:text-slate-100">{cowQty.toFixed(1)} L</span>
+                                ) : (
+                                  <span className="text-slate-300 dark:text-slate-700">-</span>
+                                )}
+                              </td>
+                              <td className="py-2 px-1 text-center border-r border-slate-200 dark:border-slate-800">
+                                {buffaloQty > 0 ? (
+                                  <span className="font-bold text-slate-905 dark:text-slate-100">{buffaloQty.toFixed(1)} L</span>
+                                ) : (
+                                  <span className="text-slate-300 dark:text-slate-700">-</span>
+                                )}
+                              </td>
+                            </React.Fragment>
                           );
                         })}
-                        <td className="py-2 px-2 text-right font-extrabold text-blue-600 dark:text-blue-400">
-                          {dayTotalQty.toFixed(1)} L
+                        <td className="py-2 px-1 text-center font-extrabold text-blue-600 dark:text-blue-405 border-r border-slate-200 dark:border-slate-800">
+                          {totalCow > 0 ? `${totalCow.toFixed(1)} L` : '-'}
+                        </td>
+                        <td className="py-2 px-1 text-center font-extrabold text-blue-600 dark:text-blue-405">
+                          {totalBuffalo > 0 ? `${totalBuffalo.toFixed(1)} L` : '-'}
                         </td>
                       </tr>
                     );
