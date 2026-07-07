@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Sidebar } from './Sidebar';
 import { BottomNav } from './BottomNav';
 import { Header } from './Header';
@@ -12,6 +13,7 @@ interface LayoutShellProps {
 }
 
 export const DashboardLayoutShell: React.FC<LayoutShellProps> = ({ children, title }) => {
+  const router = useRouter();
   const fetchData = useAppStore((state) => state.fetchData);
   const loadCurrentUser = useAppStore((state) => state.loadCurrentUser);
   const isLoading = useAppStore((state) => state.isLoading);
@@ -19,7 +21,11 @@ export const DashboardLayoutShell: React.FC<LayoutShellProps> = ({ children, tit
 
   useEffect(() => {
     const init = async () => {
-      await loadCurrentUser();
+      const user = await loadCurrentUser();
+      if (!user) {
+        router.push('/login');
+        return;
+      }
       await fetchData();
       setBooting(false);
     };
