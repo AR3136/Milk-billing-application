@@ -173,28 +173,6 @@ function CustomerDetailContent() {
           </Button>
         </div>
 
-        {/* Top summary row: Metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card title="Daily Average Yield" subtitle="Average liters logged per entry">
-            <div className="flex items-baseline gap-2 mt-2">
-              <span className="text-2xl font-extrabold text-blue-600">{dailyAverage} L</span>
-              <span className="text-xs text-slate-400">/ delivery</span>
-            </div>
-          </Card>
-          <Card title="Weekly Total Purchased" subtitle="Volume logged in last 7 days">
-            <div className="flex items-baseline gap-2 mt-2">
-              <span className="text-2xl font-extrabold text-emerald-600">{weeklyTotal} L</span>
-              <span className="text-xs text-slate-400">total</span>
-            </div>
-          </Card>
-          <Card title="Monthly Total Purchased" subtitle="Volume logged in last 30 days">
-            <div className="flex items-baseline gap-2 mt-2">
-              <span className="text-2xl font-extrabold text-violet-600">{monthlyTotal} L</span>
-              <span className="text-xs text-slate-400">total</span>
-            </div>
-          </Card>
-        </div>
-
         {/* Mid section splits */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           
