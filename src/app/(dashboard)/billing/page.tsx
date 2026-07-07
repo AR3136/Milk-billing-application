@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { DashboardLayoutShell } from '@/components/layout';
 import { Card, Badge, Button } from '@/components/ui';
-import { Receipt, Eye, Calendar } from 'lucide-react';
+import { Receipt, Eye, Calendar, Search } from 'lucide-react';
 import { useAppStore } from '@/lib/store';
 import { BillInvoiceView } from '@/features/billing/components';
 import { Bill } from '@/features/billing/types';
@@ -14,6 +14,14 @@ export default function BillingPage() {
   const payments = useAppStore((state) => state.payments);
   const expenses = useAppStore((state) => state.expenses);
   const [selectedBill, setSelectedBill] = useState<Bill | null>(null);
+  const [searchQuery, setSearchQuery]   = useState('');
+
+  const filteredCustomers = useMemo(() => {
+    return customers.filter(c => 
+      c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (c.phone && c.phone.includes(searchQuery))
+    );
+  }, [customers, searchQuery]);
 
   // Set default dates for the current billing cycle (current month)
   const now = new Date();
@@ -168,6 +176,17 @@ export default function BillingPage() {
 
         {/* Invoice Grid */}
         <Card title="Active Billing Invoices" subtitle="Invoice cycles and current outstanding balances">
+          <div className="mb-4 relative">
+            <Search className="absolute left-3 top-2.5 w-4 h-4 text-slate-400 dark:text-slate-500" />
+            <input
+              type="text"
+              placeholder="Search client by name or phone..."
+              className="w-full pl-9 pr-4 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 dark:text-slate-100"
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+            />
+          </div>
+
           <div className="overflow-x-auto w-full border border-slate-100 dark:border-slate-800 rounded-2xl">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
@@ -178,34 +197,42 @@ export default function BillingPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50 dark:divide-slate-800/50">
-                {customers.map((cust, idx) => {
-                  const billInfo = computeBillingInfo(cust);
-                  return (
-                    <tr 
-                      key={cust.id} 
-                      onClick={() => handleAction(cust, idx)}
-                      className="hover:bg-slate-50/70 dark:hover:bg-slate-900/40 transition-colors cursor-pointer"
-                    >
-                      <td className="py-4 px-5 font-bold text-slate-850 dark:text-slate-200">
-                        {cust.name}
-                      </td>
-                      <td className="py-4 px-5">
-                        {billInfo.netPayable > 0.01 ? (
-                          <span className="inline-flex items-center gap-1 text-rose-600 font-medium bg-rose-50 dark:bg-rose-950/20 px-2 py-0.5 rounded-md text-[10px]">
-                            Pending
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 text-emerald-600 font-medium bg-emerald-50 dark:bg-emerald-950/20 px-2 py-0.5 rounded-md text-[10px]">
-                            Settled
-                          </span>
-                        )}
-                      </td>
-                      <td className="py-4 px-5 text-right font-black text-slate-800 dark:text-slate-100">
-                        ₹{billInfo.netPayable.toFixed(2)}
-                      </td>
-                    </tr>
-                  );
-                })}
+                {filteredCustomers.length > 0 ? (
+                  filteredCustomers.map((cust, idx) => {
+                    const billInfo = computeBillingInfo(cust);
+                    return (
+                      <tr 
+                        key={cust.id} 
+                        onClick={() => handleAction(cust, idx)}
+                        className="hover:bg-slate-50/70 dark:hover:bg-slate-900/40 transition-colors cursor-pointer"
+                      >
+                        <td className="py-4 px-5 font-bold text-slate-850 dark:text-slate-200">
+                          {cust.name}
+                        </td>
+                        <td className="py-4 px-5">
+                          {billInfo.netPayable > 0.01 ? (
+                            <span className="inline-flex items-center gap-1 text-rose-600 font-medium bg-rose-50 dark:bg-rose-950/20 px-2 py-0.5 rounded-md text-[10px]">
+                              Pending
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 text-emerald-600 font-medium bg-emerald-50 dark:bg-emerald-950/20 px-2 py-0.5 rounded-md text-[10px]">
+                              Settled
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-4 px-5 text-right font-black text-slate-800 dark:text-slate-100">
+                          ₹{billInfo.netPayable.toFixed(2)}
+                        </td>
+                      </tr>
+                    );
+                  })
+                ) : (
+                  <tr>
+                    <td colSpan={3} className="py-8 text-center text-slate-500">
+                      No clients match your search query.
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
