@@ -14,15 +14,28 @@ export default function ReportsPage() {
   const expenses = useAppStore((state) => state.expenses);
 
   const now = new Date();
-  const y = now.getFullYear();
-  const m = String(now.getMonth() + 1).padStart(2, '0');
-  const d = String(new Date(y, now.getMonth() + 1, 0).getDate()).padStart(2, '0');
-  
-  const defaultFromDate = `${y}-${m}-01`;
-  const defaultToDate = `${y}-${m}-${d}`;
+  const [month, setMonth] = useState(now.getMonth() + 1);
+  const [year, setYear] = useState(now.getFullYear());
 
-  const [startDate, setStartDate] = useState(defaultFromDate);
-  const [endDate, setEndDate] = useState(defaultToDate);
+  const startDate = useMemo(() => {
+    const m = String(month).padStart(2, '0');
+    return `${year}-${m}-01`;
+  }, [month, year]);
+
+  const endDate = useMemo(() => {
+    const lastDay = new Date(year, month, 0).getDate();
+    const m = String(month).padStart(2, '0');
+    const d = String(lastDay).padStart(2, '0');
+    return `${year}-${m}-${d}`;
+  }, [month, year]);
+
+  const MONTH_NAMES = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ];
+
+  const currentYear = new Date().getFullYear();
+  const yearOptions = [currentYear - 1, currentYear, currentYear + 1];
 
   // Generate date array in selected range
   const dateRangeList = useMemo(() => {
@@ -185,22 +198,28 @@ export default function ReportsPage() {
         <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-100 dark:border-slate-800/80 flex flex-wrap items-end justify-between gap-4">
           <div className="flex flex-wrap items-center gap-3 text-xs">
             <div className="space-y-1">
-              <label className="font-semibold text-slate-500">From Date</label>
-              <input
-                type="date"
+              <label className="font-semibold text-slate-500">Month</label>
+              <select
                 className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-                value={startDate}
-                onChange={e => setStartDate(e.target.value)}
-              />
+                value={month}
+                onChange={e => setMonth(Number(e.target.value))}
+              >
+                {MONTH_NAMES.map((m, i) => (
+                  <option key={i} value={i + 1}>{m}</option>
+                ))}
+              </select>
             </div>
             <div className="space-y-1">
-              <label className="font-semibold text-slate-500">To Date</label>
-              <input
-                type="date"
+              <label className="font-semibold text-slate-500">Year</label>
+              <select
                 className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-                value={endDate}
-                onChange={e => setEndDate(e.target.value)}
-              />
+                value={year}
+                onChange={e => setYear(Number(e.target.value))}
+              >
+                {yearOptions.map(y => (
+                  <option key={y} value={y}>{y}</option>
+                ))}
+              </select>
             </div>
           </div>
 
