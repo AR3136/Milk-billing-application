@@ -27,7 +27,7 @@ export default function BillingPage() {
   const [startDate, setStartDate] = useState(defaultFromDate);
   const [endDate, setEndDate] = useState(defaultToDate);
 
-  const handleAction = (cust: any, idx: number) => {
+  const computeBillingInfo = (cust: any) => {
     // 1. Calculate actual milk quantities logged for this customer in selected cycle
     const cycleEntries = milkEntries.filter(
       e => e.customerId === cust.id && e.date >= startDate && e.date <= endDate
@@ -93,6 +93,18 @@ export default function BillingPage() {
     const balanceForward = Math.abs(rawBalanceForward) < 0.01 ? 0 : parseFloat(rawBalanceForward.toFixed(2));
     const netPayable = Math.round(Math.max(0, cycleTotalAmount + balanceForward - cyclePayments));
 
+    return {
+      totalQuantity,
+      cycleTotalAmount,
+      cyclePayments,
+      balanceForward,
+      netPayable,
+    };
+  };
+
+  const handleAction = (cust: any, idx: number) => {
+    const info = computeBillingInfo(cust);
+
     const dynamicBill: Bill = {
       id: cust.id,
       bill_number: `INV-2026-00${idx + 1}`,
@@ -100,13 +112,13 @@ export default function BillingPage() {
       customer_name: cust.name,
       from_date: startDate,
       to_date: endDate,
-      total_quantity: totalQuantity,
-      total_amount: cycleTotalAmount,
-      paid_amount: cyclePayments,
+      total_quantity: info.totalQuantity,
+      total_amount: info.cycleTotalAmount,
+      paid_amount: info.cyclePayments,
       balance: cust.balance,
-      balance_forward: balanceForward,
-      net_payable: netPayable,
-      status: cust.balance > 0 ? 'overdue' : 'paid',
+      balance_forward: info.balanceForward,
+      net_payable: info.netPayable,
+      status: info.netPayable > 0 ? 'overdue' : 'paid',
       created_at: new Date().toISOString(),
     };
 
@@ -166,35 +178,34 @@ export default function BillingPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50 dark:divide-slate-800/50">
-                {customers.map((cust, idx) => (
-                  <tr 
-                    key={cust.id} 
-                    onClick={() => handleAction(cust, idx)}
-                    className="hover:bg-slate-50/70 dark:hover:bg-slate-900/40 transition-colors cursor-pointer"
-                  >
-                    <td className="py-4 px-5 font-bold text-slate-850 dark:text-slate-200">
-                      {cust.name}
-                    </td>
-                    <td className="py-4 px-5">
-                      {cust.balance > 0.01 ? (
-                        <span className="inline-flex items-center gap-1 text-rose-600 font-medium bg-rose-50 dark:bg-rose-950/20 px-2 py-0.5 rounded-md text-[10px]">
-                          Pending
-                        </span>
-                      ) : cust.balance < -0.01 ? (
-                        <span className="inline-flex items-center gap-1 text-blue-650 dark:text-blue-400 font-semibold bg-blue-50 dark:bg-blue-950/25 px-2 py-0.5 rounded-md text-[10px]">
-                          Credit
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 text-emerald-600 font-medium bg-emerald-50 dark:bg-emerald-950/20 px-2 py-0.5 rounded-md text-[10px]">
-                          Settled
-                        </span>
-                      )}
-                    </td>
-                    <td className={`py-4 px-5 text-right font-black ${cust.balance < 0 ? 'text-emerald-600 dark:text-emerald-450' : 'text-slate-800 dark:text-slate-100'}`}>
-                      {cust.balance < 0 ? `₹${Math.abs(cust.balance).toFixed(2)} Cr.` : `₹${cust.balance.toFixed(2)}`}
-                    </td>
-                  </tr>
-                ))}
+                {customers.map((cust, idx) => {
+                  const billInfo = computeBillingInfo(cust);
+                  return (
+                    <tr 
+                      key={cust.id} 
+                      onClick={() => handleAction(cust, idx)}
+                      className="hover:bg-slate-50/70 dark:hover:bg-slate-900/40 transition-colors cursor-pointer"
+                    >
+                      <td className="py-4 px-5 font-bold text-slate-850 dark:text-slate-200">
+                        {cust.name}
+                      </td>
+                      <td className="py-4 px-5">
+                        {billInfo.netPayable > 0.01 ? (
+                          <span className="inline-flex items-center gap-1 text-rose-600 font-medium bg-rose-50 dark:bg-rose-950/20 px-2 py-0.5 rounded-md text-[10px]">
+                            Pending
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 text-emerald-600 font-medium bg-emerald-50 dark:bg-emerald-950/20 px-2 py-0.5 rounded-md text-[10px]">
+                            Settled
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-4 px-5 text-right font-black text-slate-800 dark:text-slate-100">
+                        ₹{billInfo.netPayable.toFixed(2)}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
