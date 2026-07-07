@@ -47,6 +47,30 @@ function CustomerDetailContent() {
     ex => ex.category === 'customer_credit_settlement' && ex.customerId === id
   );
 
+  const cowEntries = customerEntries.filter(e => e.milkType === 'cow');
+  const buffaloEntries = customerEntries.filter(e => e.milkType === 'buffalo');
+  const mixedEntries = customerEntries.filter(e => e.milkType !== 'cow' && e.milkType !== 'buffalo');
+
+  const cowQty = cowEntries.reduce((sum, e) => sum + e.quantity, 0);
+  const cowRate = cowEntries.find(e => e.rate > 0)?.rate || customer?.rateCow || customer?.rate || 0;
+  const cowAmt = Math.round(cowQty * cowRate);
+
+  const buffaloQty = buffaloEntries.reduce((sum, e) => sum + e.quantity, 0);
+  const buffaloRate = buffaloEntries.find(e => e.rate > 0)?.rate || customer?.rateBuffalo || customer?.rate || 0;
+  const buffaloAmt = Math.round(buffaloQty * buffaloRate);
+
+  const mixedQty = mixedEntries.reduce((sum, e) => sum + e.quantity, 0);
+  const mixedRate = mixedEntries.find(e => e.rate > 0)?.rate || customer?.rate || 0;
+  const mixedAmt = Math.round(mixedQty * mixedRate);
+
+  const totalMilkAmt = cowAmt + buffaloAmt + mixedAmt;
+
+  const totalPaidRaw = customerPayments.reduce((sum, p) => sum + p.amount, 0);
+  const totalSettled = customerSettlements.reduce((sum, ex) => sum + ex.amount, 0);
+  const totalPaid = totalPaidRaw - totalSettled;
+
+  const computedBalance = totalMilkAmt - totalPaid;
+
   // Combine payments and settlements for unified history display
   const combinedHistory = [
     ...customerPayments.map(p => ({
@@ -72,8 +96,8 @@ function CustomerDetailContent() {
       const reasons: string[] = [];
 
       // Rule 1: Outstanding balance is ₹0
-      if (Math.abs(customer.balance) > 0.01) {
-        reasons.push(`Outstanding balance is ₹${customer.balance.toFixed(2)} (must be ₹0.00).`);
+      if (Math.abs(computedBalance) > 0.01) {
+        reasons.push(`Outstanding balance is ₹${computedBalance.toFixed(2)} (must be ₹0.00).`);
       }
 
       setValidationReasons(reasons);
@@ -82,7 +106,7 @@ function CustomerDetailContent() {
     }
 
     checkDeletionRules();
-  }, [id, customer?.balance]);
+  }, [id, computedBalance]);
 
   if (!customer) {
     return (
@@ -244,8 +268,8 @@ function CustomerDetailContent() {
                 </div>
                 <div className="pt-3 border-t border-slate-100 dark:border-slate-800/80">
                   <p className="text-[10px] uppercase text-slate-500 font-bold">Outstanding Balance</p>
-                  <p className={`text-xl font-extrabold mt-1 ${customer.balance < 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
-                    {customer.balance < 0 ? `₹${Math.abs(customer.balance).toFixed(2)} (Credit)` : `₹${customer.balance.toFixed(2)} (Dues)`}
+                  <p className={`text-xl font-extrabold mt-1 ${computedBalance < 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                    {computedBalance < 0 ? `₹${Math.abs(computedBalance).toFixed(2)} (Credit)` : `₹${computedBalance.toFixed(2)} (Dues)`}
                   </p>
                 </div>
               </div>
