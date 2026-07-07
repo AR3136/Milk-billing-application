@@ -39,11 +39,12 @@ export const Sidebar: React.FC = () => {
     { name: 'Profile', path: '/profile', icon: UserCircle },
   ];
 
-  const bizName = React.useMemo(() => {
+  const [bizName, setBizName] = React.useState('DairyLedger');
+
+  React.useEffect(() => {
     if (typeof window !== 'undefined') {
-      return (localStorage.getItem('business_name') || 'DairyLedger').trim();
+      setBizName((localStorage.getItem('business_name') || 'DairyLedger').trim());
     }
-    return 'DairyLedger';
   }, []);
 
   const getIsActive = (itemPath: string): boolean => {
