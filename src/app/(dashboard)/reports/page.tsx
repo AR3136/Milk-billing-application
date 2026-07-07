@@ -71,32 +71,72 @@ export default function ReportsPage() {
     }
 
     try {
-      const dataRows = dateRangeList.map((date) => {
+      // 1. Build headers
+      const headerRow1 = ['Date'];
+      const headerRow2 = [''];
+      const merges: any[] = [
+        // Merge 'Date' vertically (row 0 to 1, column 0)
+        { s: { r: 0, c: 0 }, e: { r: 1, c: 0 } }
+      ];
+
+      customers.forEach((cust, index) => {
+        const colIdx = 1 + index * 2;
+        headerRow1.push(cust.name, '');
+        headerRow2.push('Cow', 'Buffalo');
+        // Merge customer name horizontally (across Cow and Buffalo)
+        merges.push({ s: { r: 0, c: colIdx }, e: { r: 0, c: colIdx + 1 } });
+      });
+
+      const totalColIdx = 1 + customers.length * 2;
+      headerRow1.push('Total', '');
+      headerRow2.push('Cow', 'Buffalo');
+      // Merge Total horizontally
+      merges.push({ s: { r: 0, c: totalColIdx }, e: { r: 0, c: totalColIdx + 1 } });
+
+      const dataRows = [headerRow1, headerRow2];
+
+      // 2. Build data rows day-wise
+      dateRangeList.forEach((date) => {
         const dateLabel = new Date(date).toLocaleDateString('en-IN', {
           day: '2-digit',
           month: 'short',
           year: 'numeric',
         });
 
-        const row: any = {
-          'Date': dateLabel,
-        };
+        const row: any[] = [dateLabel];
+        let totalCow = 0;
+        let totalBuffalo = 0;
 
-        let dayTotal = 0;
         customers.forEach((cust) => {
           const dayEntries = filteredEntries.filter(
             (e) => e.customerId === cust.id && e.date === date
           );
-          const totalQty = dayEntries.reduce((sum, e) => sum + e.quantity, 0);
-          row[cust.name] = totalQty; // Considered 0 if no entries exist
-          dayTotal += totalQty;
+          
+          const cowQty = dayEntries
+            .filter(e => e.milkType === 'cow' || e.milkType === 'mixed')
+            .reduce((sum, e) => sum + e.quantity, 0);
+            
+          const buffaloQty = dayEntries
+            .filter(e => e.milkType === 'buffalo')
+            .reduce((sum, e) => sum + e.quantity, 0);
+
+          row.push(cowQty || 0);
+          row.push(buffaloQty || 0);
+
+          totalCow += cowQty;
+          totalBuffalo += buffaloQty;
         });
 
-        row['Total Yield (Liters)'] = dayTotal;
-        return row;
+        // Push totals
+        row.push(totalCow);
+        row.push(totalBuffalo);
+        
+        dataRows.push(row);
       });
 
-      const worksheet = XLSX.utils.json_to_sheet(dataRows);
+      const worksheet = XLSX.utils.aoa_to_sheet(dataRows);
+      worksheet['!merges'] = merges;
+
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, 'Vertical Yield Log');
 
