@@ -1,30 +1,17 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { UserPlus, Milk } from 'lucide-react';
 import { Input, Button } from '@/components/ui';
 import { toast } from 'sonner';
 import { createClient } from '@/lib/supabase/client';
-import { useAppStore } from '@/lib/store';
 
 export default function RegisterPage() {
   const router = useRouter();
   const [role, setRole] = useState<'admin' | 'manager' | 'operator'>('operator');
   const [isLoading, setIsLoading] = useState(false);
-  const currentUser = useAppStore(state => state.currentUser);
-  const loadCurrentUser = useAppStore(state => state.loadCurrentUser);
-
-  useEffect(() => {
-    async function checkUser() {
-      const user = currentUser || await loadCurrentUser();
-      if (user) {
-        router.push('/dashboard');
-      }
-    }
-    checkUser();
-  }, [currentUser]);
 
   const handleRegister = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
