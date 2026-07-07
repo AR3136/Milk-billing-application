@@ -76,9 +76,7 @@ export default function RegisterPage() {
   return (
     <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 p-8 md:p-10 shadow-2xl relative overflow-hidden">
       <div className="flex flex-col items-center text-center space-y-3 mb-6">
-        <div className="w-14 h-14 bg-gradient-to-tr from-blue-600 to-emerald-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-blue-200 dark:shadow-none">
-          <Milk className="w-7 h-7" />
-        </div>
+
         <div>
           <h1 className="text-2xl font-extrabold text-slate-800 dark:text-slate-100 tracking-tight">
             Create Account
