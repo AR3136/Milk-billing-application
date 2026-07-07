@@ -64,6 +64,18 @@ export default function ReportsPage() {
 
   const netProfit = totalValue - totalExpense;
 
+  const totalLitersCow = useMemo(() => {
+    return filteredEntries
+      .filter(e => e.milkType === 'cow' || e.milkType === 'mixed')
+      .reduce((sum, e) => sum + e.quantity, 0);
+  }, [filteredEntries]);
+
+  const totalLitersBuffalo = useMemo(() => {
+    return filteredEntries
+      .filter(e => e.milkType === 'buffalo')
+      .reduce((sum, e) => sum + e.quantity, 0);
+  }, [filteredEntries]);
+
   // Build the vertical day-wise Excel sheet & trigger download
   const handleExportExcel = () => {
     if (dateRangeList.length === 0) {
@@ -134,6 +146,22 @@ export default function ReportsPage() {
         
         dataRows.push(row);
       });
+
+      // 3. Build grand totals row
+      const grandTotalRow: any[] = ['Grand Total'];
+      customers.forEach((cust) => {
+        const cowTotal = filteredEntries
+          .filter(e => e.customerId === cust.id && (e.milkType === 'cow' || e.milkType === 'mixed'))
+          .reduce((sum, e) => sum + e.quantity, 0);
+        const buffaloTotal = filteredEntries
+          .filter(e => e.customerId === cust.id && e.milkType === 'buffalo')
+          .reduce((sum, e) => sum + e.quantity, 0);
+
+        grandTotalRow.push(cowTotal, buffaloTotal);
+      });
+
+      grandTotalRow.push(totalLitersCow, totalLitersBuffalo);
+      dataRows.push(grandTotalRow);
 
       const worksheet = XLSX.utils.aoa_to_sheet(dataRows);
       worksheet['!merges'] = merges;
@@ -303,6 +331,38 @@ export default function ReportsPage() {
                     );
                   })}
                 </tbody>
+                <tfoot className="border-t-2 border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 font-extrabold text-[10px]">
+                  <tr className="bg-slate-50 dark:bg-slate-900">
+                    <td className="py-2.5 px-2 sticky left-0 bg-slate-50 dark:bg-slate-900 border-r border-slate-250 dark:border-slate-800 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] text-slate-800 dark:text-slate-200 font-bold">
+                      Total
+                    </td>
+                    {customers.map((cust) => {
+                      const cowTotal = filteredEntries
+                        .filter(e => e.customerId === cust.id && (e.milkType === 'cow' || e.milkType === 'mixed'))
+                        .reduce((sum, e) => sum + e.quantity, 0);
+                      const buffaloTotal = filteredEntries
+                        .filter(e => e.customerId === cust.id && e.milkType === 'buffalo')
+                        .reduce((sum, e) => sum + e.quantity, 0);
+                        
+                      return (
+                        <React.Fragment key={`tot-${cust.id}`}>
+                          <td className="py-2 px-1 text-center border-r border-slate-250 dark:border-slate-800 text-slate-800 dark:text-slate-200 font-bold">
+                            {cowTotal > 0 ? `${cowTotal.toFixed(1)} L` : '-'}
+                          </td>
+                          <td className="py-2 px-1 text-center border-r border-slate-250 dark:border-slate-800 text-slate-800 dark:text-slate-200 font-bold">
+                            {buffaloTotal > 0 ? `${buffaloTotal.toFixed(1)} L` : '-'}
+                          </td>
+                        </React.Fragment>
+                      );
+                    })}
+                    <td className="py-2 px-1 text-center text-blue-650 dark:text-blue-400 border-r border-slate-250 dark:border-slate-800 font-extrabold">
+                      {totalLitersCow > 0 ? `${totalLitersCow.toFixed(1)} L` : '-'}
+                    </td>
+                    <td className="py-2 px-1 text-center text-blue-650 dark:text-blue-400 font-extrabold">
+                      {totalLitersBuffalo > 0 ? `${totalLitersBuffalo.toFixed(1)} L` : '-'}
+                    </td>
+                  </tr>
+                </tfoot>
               </table>
             </div>
           )}
