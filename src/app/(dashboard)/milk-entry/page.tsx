@@ -199,9 +199,14 @@ export default function MilkEntryPage() {
       toast.error('Customer has no phone number.');
       return;
     }
+    const isMarathi = selectedCust.messageLanguage === 'marathi';
     const businessName = (localStorage.getItem('business_name') || 'DairyLedger').trim();
-    const msg = localStorage.getItem('whatsapp_no_milk') || 'You did not take milk today.';
-    const greeting = localStorage.getItem('whatsapp_greeting') || 'Hello';
+    const msg = isMarathi
+      ? localStorage.getItem('whatsapp_no_milk_mr') || 'तुम्ही आज दूध घेतले नाही.'
+      : localStorage.getItem('whatsapp_no_milk') || 'You did not take milk today.';
+    const greeting = isMarathi
+      ? localStorage.getItem('whatsapp_greeting_mr') || 'नमस्कार'
+      : localStorage.getItem('whatsapp_greeting') || 'Hello';
     
     const text = `${greeting} ${selectedCust.name},\n\n*${businessName}*\n----------------------------------------------\n${msg}\n----------------------------------------------`;
     const url = `https://wa.me/91${selectedCust.phone.replace(/\D/g, '')}?text=${encodeURIComponent(text)}`;

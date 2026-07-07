@@ -119,11 +119,8 @@ export const BillInvoiceView: React.FC<BillInvoiceViewProps> = ({ bill, onClose 
     }
 
     if (isMarathi) {
-      const marathiBizThankYou = bizThankYou === 'Please clear the dues. Thank you!'
-        ? 'कृपया थकबाकी जमा करा. धन्यवाद!'
-        : bizThankYou;
-      
-      const marathiGreeting = bizGreeting === 'Hello' ? 'नमस्कार' : bizGreeting;
+      const marathiGreeting = localStorage.getItem('whatsapp_greeting_mr') || 'नमस्कार';
+      const marathiBizThankYou = localStorage.getItem('whatsapp_thankyou_mr') || 'कृपया थकबाकी जमा करा. धन्यवाद!';
       
       return `${marathiGreeting} ${bill.customer_name},\n\n` +
         `*${bizName.toUpperCase()} इनव्हॉइस*\n` +

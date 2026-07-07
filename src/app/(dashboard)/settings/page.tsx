@@ -30,6 +30,10 @@ export default function SettingsPage() {
   const [whatsappThankyou, setWhatsappThankyou] = useState('Please clear the dues. Thank you!');
   const [whatsappNoMilk, setWhatsappNoMilk] = useState('You did not take milk today.');
 
+  const [whatsappGreetingMr, setWhatsappGreetingMr] = useState('नमस्कार');
+  const [whatsappThankyouMr, setWhatsappThankyouMr] = useState('कृपया थकबाकी जमा करा. धन्यवाद!');
+  const [whatsappNoMilkMr, setWhatsappNoMilkMr] = useState('तुम्ही आज दूध घेतले नाही.');
+
   // Toggles
   const [calcEnabled, setCalcEnabled] = useState(true);
   const [smsEnabled, setSmsEnabled] = useState(false);
@@ -48,6 +52,10 @@ export default function SettingsPage() {
       setWhatsappGreeting(localStorage.getItem('whatsapp_greeting') || 'Hello');
       setWhatsappThankyou(localStorage.getItem('whatsapp_thankyou') || 'Please clear the dues. Thank you!');
       setWhatsappNoMilk(localStorage.getItem('whatsapp_no_milk') || 'You did not take milk today.');
+
+      setWhatsappGreetingMr(localStorage.getItem('whatsapp_greeting_mr') || 'नमस्कार');
+      setWhatsappThankyouMr(localStorage.getItem('whatsapp_thankyou_mr') || 'कृपया थकबाकी जमा करा. धन्यवाद!');
+      setWhatsappNoMilkMr(localStorage.getItem('whatsapp_no_milk_mr') || 'तुम्ही आज दूध घेतले नाही.');
 
       setCalcEnabled(localStorage.getItem('toggle_calc') !== 'false');
       setSmsEnabled(localStorage.getItem('toggle_sms') === 'true');
@@ -75,6 +83,10 @@ export default function SettingsPage() {
     localStorage.setItem('whatsapp_greeting', whatsappGreeting.trim());
     localStorage.setItem('whatsapp_thankyou', whatsappThankyou.trim());
     localStorage.setItem('whatsapp_no_milk', whatsappNoMilk.trim());
+
+    localStorage.setItem('whatsapp_greeting_mr', whatsappGreetingMr.trim());
+    localStorage.setItem('whatsapp_thankyou_mr', whatsappThankyouMr.trim());
+    localStorage.setItem('whatsapp_no_milk_mr', whatsappNoMilkMr.trim());
     toast.success('WhatsApp templates updated successfully!');
   };
 
@@ -137,28 +149,56 @@ export default function SettingsPage() {
                 <p className="mt-1 leading-relaxed">The message body will look exactly like your copied clipboard invoice, starting with your customizable greeting prefix and ending with your custom closing footer.</p>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Input 
-                  label="Greeting Prefix Word" 
-                  value={whatsappGreeting}
-                  onChange={(e) => setWhatsappGreeting(e.target.value)}
-                  placeholder="e.g. Hello, Dear, Namaste"
-                />
-                <Input 
-                  label="Ending / Thank You Note" 
-                  value={whatsappThankyou}
-                  onChange={(e) => setWhatsappThankyou(e.target.value)}
-                  placeholder="e.g. Please clear the dues. Thank you!"
-                />
+              <div className="border-t border-slate-100 dark:border-slate-800/80 my-2 pt-2">
+                <p className="font-bold text-slate-750 dark:text-slate-200 mb-2">English Message Templates</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Input 
+                    label="Greeting Prefix Word" 
+                    value={whatsappGreeting}
+                    onChange={(e) => setWhatsappGreeting(e.target.value)}
+                    placeholder="e.g. Hello, Dear, Namaste"
+                  />
+                  <Input 
+                    label="Ending / Thank You Note" 
+                    value={whatsappThankyou}
+                    onChange={(e) => setWhatsappThankyou(e.target.value)}
+                    placeholder="e.g. Please clear the dues. Thank you!"
+                  />
+                </div>
+                <div className="grid grid-cols-1 gap-4 mt-3">
+                  <Input 
+                    label="No Milk Message" 
+                    value={whatsappNoMilk}
+                    onChange={(e) => setWhatsappNoMilk(e.target.value)}
+                    placeholder="Message for when they haven't taken milk today"
+                  />
+                </div>
               </div>
 
-              <div className="grid grid-cols-1 gap-4">
-                <Input 
-                  label="No Milk Message" 
-                  value={whatsappNoMilk}
-                  onChange={(e) => setWhatsappNoMilk(e.target.value)}
-                  placeholder="Message for when they haven't taken milk today"
-                />
+              <div className="border-t border-slate-150 dark:border-slate-800/85 my-2 pt-3">
+                <p className="font-bold text-slate-750 dark:text-slate-200 mb-2">Marathi Message Templates (मराठी संदेश प्रारूप)</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Input 
+                    label="Greeting Prefix (मराठी नमस्कार)" 
+                    value={whatsappGreetingMr}
+                    onChange={(e) => setWhatsappGreetingMr(e.target.value)}
+                    placeholder="उदा. नमस्कार"
+                  />
+                  <Input 
+                    label="Ending Note (मराठी आभार टीप)" 
+                    value={whatsappThankyouMr}
+                    onChange={(e) => setWhatsappThankyouMr(e.target.value)}
+                    placeholder="उदा. कृपया थकबाकी जमा करा. धन्यवाद!"
+                  />
+                </div>
+                <div className="grid grid-cols-1 gap-4 mt-3">
+                  <Input 
+                    label="No Milk Message (दूध न घेतल्याचा संदेश)" 
+                    value={whatsappNoMilkMr}
+                    onChange={(e) => setWhatsappNoMilkMr(e.target.value)}
+                    placeholder="उदा. तुम्ही आज दूध घेतले नाही."
+                  />
+                </div>
               </div>
 
               <div className="pt-2">
