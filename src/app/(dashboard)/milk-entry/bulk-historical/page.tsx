@@ -1201,7 +1201,7 @@ export default function BulkHistoricalEntryPage() {
               <ol className="text-xs space-y-0.5 text-blue-600 dark:text-blue-400 list-decimal list-inside">
                 <li>Select a customer, month and year above.</li>
                 <li>Click <strong>Load Month</strong> to generate the full-month grid.</li>
-                <li>Fill in morning / evening quantities or amounts day by day.</li>
+                <li>Fill in cow / buffalo quantities or amounts day by day.</li>
                 <li>Use <strong>Save Entire Month</strong> or save individual rows.</li>
               </ol>
               <p className="text-[10px] text-blue-500 dark:text-blue-500 pt-1">
