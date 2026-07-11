@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { DashboardLayoutShell } from '@/components/layout';
 import { Card, Button, Input } from '@/components/ui';
-import { CreditCard, AlertCircle } from 'lucide-react';
+import { CreditCard, AlertCircle, MessageSquare } from 'lucide-react';
 import { useAppStore } from '@/lib/store';
 import { toast } from 'sonner';
 
@@ -25,6 +25,24 @@ export default function PaymentsPage() {
     }
   }, [customers, customerId]);
 
+  const sendThanksWhatsApp = (custName: string, phone: string, amt: number, pDate: string, pMethod: string, lang: string) => {
+    const isMarathi = lang === 'marathi';
+    const businessName = (localStorage.getItem('business_name') || 'DairyLedger').trim();
+    const greeting = isMarathi
+      ? localStorage.getItem('whatsapp_greeting_mr') || 'नमस्कार'
+      : localStorage.getItem('whatsapp_greeting') || 'Hello';
+    
+    const methodLabel = pMethod === 'upi' ? 'UPI / GPay' : pMethod === 'cash' ? (isMarathi ? 'रोख (Cash)' : 'Cash') : (isMarathi ? 'बँक ट्रान्सफर' : 'Bank Transfer');
+    const formattedDate = pDate.split('-').reverse().join('-'); // DD-MM-YYYY
+    
+    const msg = isMarathi
+      ? `${greeting} ${custName},\n\nआम्हाला तुमची ₹${amt.toFixed(2)} ची देय रक्कम ${formattedDate} रोजी ${methodLabel} द्वारे प्राप्त झाली आहे. पेमेंट केल्याबद्दल धन्यवाद!\n\n*${businessName}*`
+      : `${greeting} ${custName},\n\nWe have successfully received your payment of ₹${amt.toFixed(2)} on ${formattedDate} via ${methodLabel}. Thank you for the payment!\n\n*${businessName}*`;
+
+    const url = `https://wa.me/91${phone.replace(/\D/g, '')}?text=${encodeURIComponent(msg)}`;
+    window.open(url, '_blank');
+  };
+
   const handlePay = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!customerId || !amount) {
@@ -43,7 +61,13 @@ export default function PaymentsPage() {
         date,
         method,
       });
-      toast.success(`✓ Payment of ₹${amount} recorded for ${selectedCust.name}`);
+      toast.success(`✓ Payment of ₹${amount} recorded for ${selectedCust.name}`, {
+        action: {
+          label: 'Send Thanks',
+          onClick: () => sendThanksWhatsApp(selectedCust.name, selectedCust.phone || '', Number(amount), date, method, selectedCust.messageLanguage || 'english')
+        },
+        duration: 10000
+      });
       setAmount('');
     } catch (err: any) {
       toast.error(err.message || 'Failed to save payment. Please try again.');
@@ -146,17 +170,32 @@ export default function PaymentsPage() {
                       <th className="py-3 px-4">Customer</th>
                       <th className="py-3 px-4">Method</th>
                       <th className="py-3 px-4 text-right">Amount</th>
+                      <th className="py-3 px-4 text-right w-16">Thanks</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-50 dark:divide-slate-800/50">
-                    {payments.slice(0, 50).map(p => (
-                      <tr key={p.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/30 transition-colors">
-                        <td className="py-3.5 px-4 text-slate-500 dark:text-slate-400">{p.date}</td>
-                        <td className="py-3.5 px-4 font-semibold text-slate-800 dark:text-slate-200">{p.customerName}</td>
-                        <td className="py-3.5 px-4 capitalize text-slate-500 dark:text-slate-400">{p.method.replace('_', ' ')}</td>
-                        <td className="py-3.5 px-4 text-right font-bold text-emerald-600 dark:text-emerald-400">₹{p.amount.toFixed(2)}</td>
-                      </tr>
-                    ))}
+                    {payments.slice(0, 50).map(p => {
+                      const cust = customers.find(c => c.id === p.customerId);
+                      return (
+                        <tr key={p.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/30 transition-colors">
+                          <td className="py-3.5 px-4 text-slate-500 dark:text-slate-400">{p.date}</td>
+                          <td className="py-3.5 px-4 font-semibold text-slate-800 dark:text-slate-200">{p.customerName}</td>
+                          <td className="py-3.5 px-4 capitalize text-slate-500 dark:text-slate-400">{p.method.replace('_', ' ')}</td>
+                          <td className="py-3.5 px-4 text-right font-bold text-emerald-600 dark:text-emerald-400">₹{p.amount.toFixed(2)}</td>
+                          <td className="py-3.5 px-4 text-right">
+                            {cust?.phone && (
+                              <button
+                                onClick={() => sendThanksWhatsApp(p.customerName, cust.phone, p.amount, p.date, p.method, cust.messageLanguage || 'english')}
+                                className="text-emerald-600 hover:text-emerald-700 dark:text-emerald-450 dark:hover:text-emerald-350 p-1 hover:bg-slate-50 dark:hover:bg-slate-800/60 rounded-md transition-colors"
+                                title="Send Thanks via WhatsApp"
+                              >
+                                <MessageSquare className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>

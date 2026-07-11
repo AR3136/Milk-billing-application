@@ -153,7 +153,6 @@ export default function MilkEntryPage() {
         amount: derivedAmount,
       });
 
-      // 2. Log Payment
       await addPayment({
         customerId,
         customerName: selectedCust!.name,
@@ -162,7 +161,31 @@ export default function MilkEntryPage() {
         method,
       });
 
-      toast.success(`✓ Logged & Paid ₹${paymentAmount} via ${method.toUpperCase()} for ${selectedCust!.name}`);
+      const sendThanksWhatsApp = (custName: string, phone: string, amt: number, pDate: string, pMethod: string, lang: string) => {
+        const isMarathi = lang === 'marathi';
+        const businessName = (localStorage.getItem('business_name') || 'DairyLedger').trim();
+        const greeting = isMarathi
+          ? localStorage.getItem('whatsapp_greeting_mr') || 'नमस्कार'
+          : localStorage.getItem('whatsapp_greeting') || 'Hello';
+        
+        const methodLabel = pMethod === 'upi' ? 'UPI / GPay' : pMethod === 'cash' ? (isMarathi ? 'रोख (Cash)' : 'Cash') : (isMarathi ? 'बँक ट्रान्सफर' : 'Bank Transfer');
+        const formattedDate = pDate.split('-').reverse().join('-'); // DD-MM-YYYY
+        
+        const msg = isMarathi
+          ? `${greeting} ${custName},\n\nआम्हाला तुमची ₹${amt.toFixed(2)} ची देय रक्कम ${formattedDate} रोजी ${methodLabel} द्वारे प्राप्त झाली आहे. पेमेंट केल्याबद्दल धन्यवाद!\n\n*${businessName}*`
+          : `${greeting} ${custName},\n\nWe have successfully received your payment of ₹${amt.toFixed(2)} on ${formattedDate} via ${methodLabel}. Thank you for the payment!\n\n*${businessName}*`;
+
+        const url = `https://wa.me/91${phone.replace(/\D/g, '')}?text=${encodeURIComponent(msg)}`;
+        window.open(url, '_blank');
+      };
+
+      toast.success(`✓ Logged & Paid ₹${paymentAmount} via ${method.toUpperCase()} for ${selectedCust!.name}`, {
+        action: {
+          label: 'Send Thanks',
+          onClick: () => sendThanksWhatsApp(selectedCust!.name, selectedCust!.phone || '', paymentAmount, date, method, selectedCust!.messageLanguage || 'english')
+        },
+        duration: 10000
+      });
       setQuantity('');
     } catch (err: any) {
       toast.error(err.message || 'Failed to process spot payment. Please try again.');
