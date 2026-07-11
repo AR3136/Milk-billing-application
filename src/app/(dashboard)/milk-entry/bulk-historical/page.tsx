@@ -392,7 +392,7 @@ export default function BulkHistoricalEntryPage() {
   const [defaultRate, setDefaultRate]   = useState('');
   const [defaultPricingMethod, setDefaultPricingMethod] = useState<'by_quantity' | 'by_amount'>('by_quantity');
   const [defaultValue, setDefaultValue] = useState('');
-  const [applyShift, setApplyShift] = useState<'morning' | 'evening'>('morning');
+  const [applyShift, setApplyShift] = useState<'morning' | 'evening' | 'split'>('morning');
   // 'Both' milk type — separate cow/buffalo values
   const [defaultCowRate, setDefaultCowRate]         = useState('');
   const [defaultCowValue, setDefaultCowValue]       = useState('');
@@ -434,12 +434,15 @@ export default function BulkHistoricalEntryPage() {
       setDefaultMilkType('both');
       setDefaultCowRate(String(selectedCust.rateCow || selectedCust.rate || ''));
       setDefaultBuffaloRate(String(selectedCust.rateBuffalo || selectedCust.rate || ''));
+      setApplyShift('split');
     } else if (selectedCust.milkType === 'mixed') {
       setDefaultMilkType('mixed');
       setDefaultRate(String(selectedCust.rate || ''));
+      setApplyShift('morning');
     } else {
       setDefaultMilkType(selectedCust.milkType as MilkType);
       setDefaultRate(String(selectedCust.rate || ''));
+      setApplyShift('morning');
     }
     setIsMonthLoaded(false);
     setRows([]);
@@ -509,7 +512,6 @@ export default function BulkHistoricalEntryPage() {
     }
 
     if (defaultMilkType === 'both') {
-      // 'Both' mode: Morning → Cow, Evening → Buffalo with separate values
       const cowRate  = parseFloat(defaultCowRate)  || 0;
       const cowVal   = parseFloat(defaultCowValue)  || 0;
       const bufRate  = parseFloat(defaultBuffaloRate) || 0;
@@ -539,7 +541,6 @@ export default function BulkHistoricalEntryPage() {
         return updated;
       };
 
-      // In 'both' mode always fill BOTH shifts simultaneously
       setRows(prev => prev.map(row => {
         if (!row.selected) return row;
         return {
@@ -591,21 +592,28 @@ export default function BulkHistoricalEntryPage() {
       const supabase = createClient();
       const { data: existing, error } = await supabase
         .from('milk_entries')
-        .select('id, date, shift')
+        .select('id, date, shift, milk_type')
         .eq('customer_id', selectedCustId)
         .gte('date', startDate)
         .lte('date', endDate);
 
       if (error) throw new Error(error.message);
 
-      // Build lookup: "YYYY-MM-DD-morning" → id
+      // Build lookup: "YYYY-MM-DD-shift-milk_type" → id
       const existingMap: Record<string, string> = {};
       (existing ?? []).forEach(e => {
-        existingMap[`${e.date}-${e.shift}`] = e.id;
+        existingMap[`${e.date}-${e.shift}-${e.milk_type}`] = e.id;
       });
 
       // Generate one row per day
       const newRows: DayRow[] = [];
+      const cowShift = defaultMilkType === 'both'
+        ? (applyShift === 'evening' ? 'evening' : 'morning')
+        : 'morning';
+      const buffaloShift = defaultMilkType === 'both'
+        ? (applyShift === 'morning' ? 'morning' : 'evening')
+        : 'evening';
+
       for (let day = 1; day <= daysInMonth; day++) {
         const dateStr   = makeDateStr(year, month, day);
         const dayOfWeek = new Date(dateStr).getDay(); // 0=Sun
@@ -618,13 +626,13 @@ export default function BulkHistoricalEntryPage() {
           morning: makeDefaultShift(
             defaultMilkType === 'both' ? 'cow' : defaultMilkType,
             defaultMilkType === 'both' ? defaultCowRate : defaultRate,
-            existingMap[`${dateStr}-morning`] ?? null,
+            existingMap[`${dateStr}-${cowShift}-${defaultMilkType === 'both' ? 'cow' : defaultMilkType}`] ?? null,
             isWeekend,
           ),
           evening: makeDefaultShift(
             defaultMilkType === 'both' ? 'buffalo' : defaultMilkType,
             defaultMilkType === 'both' ? defaultBuffaloRate : defaultRate,
-            existingMap[`${dateStr}-evening`] ?? null,
+            existingMap[`${dateStr}-${buffaloShift}-${defaultMilkType === 'both' ? 'buffalo' : defaultMilkType}`] ?? null,
             isWeekend,
           ),
           remarks: '',
@@ -660,6 +668,15 @@ export default function BulkHistoricalEntryPage() {
     if (s.existingId) return null;
     if (s.status !== 'normal') return null;
 
+    const cowShift = defaultMilkType === 'both'
+      ? (applyShift === 'evening' ? 'evening' : 'morning')
+      : 'morning';
+    const buffaloShift = defaultMilkType === 'both'
+      ? (applyShift === 'morning' ? 'morning' : 'evening')
+      : 'evening';
+    
+    const dbShift = shiftKey === 'morning' ? cowShift : buffaloShift;
+
     // If row is not selected/ticked, save entry as zero (0 liters)
     if (!row.selected) {
       let rate = parseFloat(s.rate);
@@ -676,7 +693,7 @@ export default function BulkHistoricalEntryPage() {
         customer_id: selectedCustId,
         user_id: currentUser.id,
         date: row.date,
-        shift: shiftKey,
+        shift: dbShift,
         quantity: 0,
         rate_applied: rate,
         milk_type: s.milkType,
@@ -692,7 +709,7 @@ export default function BulkHistoricalEntryPage() {
         customer_id: selectedCustId,
         user_id: currentUser.id,
         date: row.date,
-        shift: shiftKey,
+        shift: dbShift,
         quantity: qty,
         rate_applied: rate,
         milk_type: s.milkType,
@@ -709,7 +726,7 @@ export default function BulkHistoricalEntryPage() {
           customer_id: selectedCustId,
           user_id: currentUser.id,
           date: row.date,
-          shift: shiftKey,
+          shift: dbShift,
           quantity: 1,
           rate_applied: amt,
           milk_type: s.milkType,
@@ -721,7 +738,7 @@ export default function BulkHistoricalEntryPage() {
         customer_id: selectedCustId,
         user_id: currentUser.id,
         date: row.date,
-        shift: shiftKey,
+        shift: dbShift,
         quantity: qty,
         rate_applied: rate,
         milk_type: s.milkType,
@@ -1152,10 +1169,20 @@ export default function BulkHistoricalEntryPage() {
               </select>
             </div>
 
-            {/* Target Shift — hidden for 'both' mode since both shifts are always filled together */}
-            {defaultMilkType !== 'both' && (
-              <div>
-                <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Target Shift</label>
+            {/* Target Shift select dropdown */}
+            <div>
+              <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Target Shift</label>
+              {defaultMilkType === 'both' ? (
+                <select
+                  value={applyShift}
+                  onChange={e => setApplyShift(e.target.value as any)}
+                  className="mt-1 block px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-100 focus:outline-none"
+                >
+                  <option value="split">🔄 Split (Cow Morning, Buffalo Evening)</option>
+                  <option value="morning">☀️ Morning (Both Cow & Buffalo)</option>
+                  <option value="evening">🌙 Evening (Both Cow & Buffalo)</option>
+                </select>
+              ) : (
                 <select
                   value={applyShift}
                   onChange={e => setApplyShift(e.target.value as any)}
@@ -1164,8 +1191,8 @@ export default function BulkHistoricalEntryPage() {
                   <option value="morning">☀️ Morning Only</option>
                   <option value="evening">🌙 Evening Only</option>
                 </select>
-              </div>
-            )}
+              )}
+            </div>
 
             <Button
               variant="outline"
