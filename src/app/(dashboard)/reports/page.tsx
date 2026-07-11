@@ -228,31 +228,7 @@ export default function ReportsPage() {
           </Button>
         </div>
 
-        {/* Top Summary Metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card className="border-l-4 border-l-blue-500">
-            <p className="text-xs uppercase text-slate-500 font-semibold">Total Yield Volume</p>
-            <h3 className="text-xl font-bold mt-1">{totalLiters.toFixed(1)} L</h3>
-            <p className="text-[10px] text-slate-400 mt-0.5">Total liters collected</p>
-          </Card>
-          <Card className="border-l-4 border-l-emerald-500">
-            <p className="text-xs uppercase text-slate-500 font-semibold">Total Dues Value</p>
-            <h3 className="text-xl font-bold text-emerald-600 dark:text-emerald-400 mt-1">₹{totalValue.toFixed(2)}</h3>
-            <p className="text-[10px] text-slate-400 mt-0.5">Current cycle value</p>
-          </Card>
-          <Card className="border-l-4 border-l-rose-500">
-            <p className="text-xs uppercase text-slate-500 font-semibold">Log Period Expenses</p>
-            <h3 className="text-xl font-bold text-rose-600 mt-1">₹{totalExpense.toFixed(2)}</h3>
-            <p className="text-[10px] text-slate-400 mt-0.5">Feed, salaries and repairs</p>
-          </Card>
-          <Card className="border-l-4 border-l-violet-500">
-            <p className="text-xs uppercase text-slate-500 font-semibold">Net Operating Balance</p>
-            <h3 className={`text-xl font-bold mt-1 ${netProfit >= 0 ? 'text-violet-600' : 'text-rose-600'}`}>
-              ₹{netProfit.toFixed(2)}
-            </h3>
-            <p className="text-[10px] text-slate-400 mt-0.5">Revenue minus expenses</p>
-          </Card>
-        </div>
+
 
         {/* Vertical Day-Wise Excel Like Sheet Grid */}
         <Card title="Vertical Collections Logbook Grid" subtitle="Scroll horizontally if you have many customers (missing collections default to 0 L)">
