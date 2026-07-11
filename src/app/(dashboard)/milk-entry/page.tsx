@@ -171,9 +171,20 @@ export default function MilkEntryPage() {
         const methodLabel = pMethod === 'upi' ? 'UPI / GPay' : pMethod === 'cash' ? (isMarathi ? 'रोख (Cash)' : 'Cash') : (isMarathi ? 'बँक ट्रान्सफर' : 'Bank Transfer');
         const formattedDate = pDate.split('-').reverse().join('-'); // DD-MM-YYYY
         
-        const msg = isMarathi
-          ? `${greeting} ${custName},\n\nआम्हाला तुमची ₹${amt.toFixed(2)} ची देय रक्कम ${formattedDate} रोजी ${methodLabel} द्वारे प्राप्त झाली आहे. पेमेंट केल्याबद्दल धन्यवाद!\n\n*${businessName}*`
-          : `${greeting} ${custName},\n\nWe have successfully received your payment of ₹${amt.toFixed(2)} on ${formattedDate} via ${methodLabel}. Thank you for the payment!\n\n*${businessName}*`;
+        const defaultTemplate = isMarathi
+          ? 'आम्हाला तुमची ₹[Amount] ची देय रक्कम [Date] रोजी [Method] द्वारे प्राप्त झाली आहे. पेमेंट केल्याबद्दल धन्यवाद!'
+          : 'We have successfully received your payment of ₹[Amount] on [Date] via [Method]. Thank you for the payment!';
+        
+        const template = isMarathi
+          ? localStorage.getItem('whatsapp_payment_thanks_mr') || defaultTemplate
+          : localStorage.getItem('whatsapp_payment_thanks') || defaultTemplate;
+
+        const bodyText = template
+          .replace('[Amount]', amt.toFixed(2))
+          .replace('[Date]', formattedDate)
+          .replace('[Method]', methodLabel);
+
+        const msg = `${greeting} ${custName},\n\n${bodyText}\n\n*${businessName}*`;
 
         const url = `https://wa.me/91${phone.replace(/\D/g, '')}?text=${encodeURIComponent(msg)}`;
         window.open(url, '_blank');

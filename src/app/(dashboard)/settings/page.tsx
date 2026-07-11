@@ -26,13 +26,16 @@ export default function SettingsPage() {
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
 
   // WhatsApp templates
-  const [whatsappGreeting, setWhatsappGreeting] = useState('Namaskar');
-  const [whatsappThankyou, setWhatsappThankyou] = useState('Sorry');
+  const [whatsappGreeting, setWhatsappGreeting] = useState('Hello');
+  const [whatsappThankyou, setWhatsappThankyou] = useState('Please clear the dues. Thank you!');
   const [whatsappNoMilk, setWhatsappNoMilk] = useState('You did not take milk today.');
 
   const [whatsappGreetingMr, setWhatsappGreetingMr] = useState('नमस्कार');
   const [whatsappThankyouMr, setWhatsappThankyouMr] = useState('कृपया थकबाकी जमा करा. धन्यवाद!');
   const [whatsappNoMilkMr, setWhatsappNoMilkMr] = useState('तुम्ही आज दूध घेतले नाही.');
+
+  const [whatsappPaymentThanks, setWhatsappPaymentThanks] = useState('We have successfully received your payment of ₹[Amount] on [Date] via [Method]. Thank you for the payment!');
+  const [whatsappPaymentThanksMr, setWhatsappPaymentThanksMr] = useState('आम्हाला तुमची ₹[Amount] ची देय रक्कम [Date] रोजी [Method] द्वारे प्राप्त झाली आहे. पेमेंट केल्याबद्दल धन्यवाद!');
 
   // Toggles
   const [calcEnabled, setCalcEnabled] = useState(true);
@@ -49,13 +52,16 @@ export default function SettingsPage() {
       setBuffaloRate(localStorage.getItem('rate_buffalo') || '60');
       setMixedRate(localStorage.getItem('rate_mixed') || '52');
       
-      setWhatsappGreeting(localStorage.getItem('whatsapp_greeting') || 'Namaskar');
-      setWhatsappThankyou(localStorage.getItem('whatsapp_thankyou') || 'Sorry');
+      setWhatsappGreeting(localStorage.getItem('whatsapp_greeting') || 'Hello');
+      setWhatsappThankyou(localStorage.getItem('whatsapp_thankyou') || 'Please clear the dues. Thank you!');
       setWhatsappNoMilk(localStorage.getItem('whatsapp_no_milk') || 'You did not take milk today.');
 
       setWhatsappGreetingMr(localStorage.getItem('whatsapp_greeting_mr') || 'नमस्कार');
       setWhatsappThankyouMr(localStorage.getItem('whatsapp_thankyou_mr') || 'कृपया थकबाकी जमा करा. धन्यवाद!');
       setWhatsappNoMilkMr(localStorage.getItem('whatsapp_no_milk_mr') || 'तुम्ही आज दूध घेतले नाही.');
+
+      setWhatsappPaymentThanks(localStorage.getItem('whatsapp_payment_thanks') || 'We have successfully received your payment of ₹[Amount] on [Date] via [Method]. Thank you for the payment!');
+      setWhatsappPaymentThanksMr(localStorage.getItem('whatsapp_payment_thanks_mr') || 'आम्हाला तुमची ₹[Amount] ची देय रक्कम [Date] रोजी [Method] द्वारे प्राप्त झाली आहे. पेमेंट केल्याबद्दल धन्यवाद!');
 
       setCalcEnabled(localStorage.getItem('toggle_calc') !== 'false');
       setSmsEnabled(localStorage.getItem('toggle_sms') === 'true');
@@ -87,6 +93,9 @@ export default function SettingsPage() {
     localStorage.setItem('whatsapp_greeting_mr', whatsappGreetingMr.trim());
     localStorage.setItem('whatsapp_thankyou_mr', whatsappThankyouMr.trim());
     localStorage.setItem('whatsapp_no_milk_mr', whatsappNoMilkMr.trim());
+
+    localStorage.setItem('whatsapp_payment_thanks', whatsappPaymentThanks.trim());
+    localStorage.setItem('whatsapp_payment_thanks_mr', whatsappPaymentThanksMr.trim());
     toast.success('WhatsApp templates updated successfully!');
   };
 
@@ -172,6 +181,12 @@ export default function SettingsPage() {
                     onChange={(e) => setWhatsappNoMilk(e.target.value)}
                     placeholder="Message for when they haven't taken milk today"
                   />
+                  <Input 
+                    label="Payment Received Thanks Message (Use [Amount], [Date], [Method] for dynamic values)" 
+                    value={whatsappPaymentThanks}
+                    onChange={(e) => setWhatsappPaymentThanks(e.target.value)}
+                    placeholder="e.g. Received payment of ₹[Amount] on [Date] via [Method]. Thank you!"
+                  />
                 </div>
               </div>
 
@@ -197,6 +212,12 @@ export default function SettingsPage() {
                     value={whatsappNoMilkMr}
                     onChange={(e) => setWhatsappNoMilkMr(e.target.value)}
                     placeholder="उदा. तुम्ही आज दूध घेतले नाही."
+                  />
+                  <Input 
+                    label="Payment Received Thanks Message (पेमेंट मिळाल्याबद्दल धन्यवाद संदेश) - (उदा. [Amount], [Date], [Method] वापरा)" 
+                    value={whatsappPaymentThanksMr}
+                    onChange={(e) => setWhatsappPaymentThanksMr(e.target.value)}
+                    placeholder="उदा. आम्हाला तुमची ₹[Amount] ची देय रक्कम [Date] रोजी [Method] द्वारे प्राप्त झाली आहे."
                   />
                 </div>
               </div>
