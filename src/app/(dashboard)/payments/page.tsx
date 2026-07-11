@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { DashboardLayoutShell } from '@/components/layout';
 import { Card, Button, Input } from '@/components/ui';
-import { CreditCard, AlertCircle, MessageSquare } from 'lucide-react';
+import { CreditCard, AlertCircle, MessageSquare, Trash2 } from 'lucide-react';
 import { useAppStore } from '@/lib/store';
 import { toast } from 'sonner';
 
@@ -11,6 +11,7 @@ export default function PaymentsPage() {
   const customers = useAppStore((state) => state.customers);
   const payments = useAppStore((state) => state.payments);
   const addPayment = useAppStore((state) => state.addPayment);
+  const deletePayment = useAppStore((state) => state.deletePayment);
 
   const today = new Date().toISOString().split('T')[0];
   const [customerId, setCustomerId] = useState('');
@@ -181,7 +182,7 @@ export default function PaymentsPage() {
                       <th className="py-3 px-4">Customer</th>
                       <th className="py-3 px-4">Method</th>
                       <th className="py-3 px-4 text-right">Amount</th>
-                      <th className="py-3 px-4 text-right w-16">Thanks</th>
+                      <th className="py-3 px-4 text-right w-24">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-50 dark:divide-slate-800/50">
@@ -194,15 +195,33 @@ export default function PaymentsPage() {
                           <td className="py-3.5 px-4 capitalize text-slate-500 dark:text-slate-400">{p.method.replace('_', ' ')}</td>
                           <td className="py-3.5 px-4 text-right font-bold text-emerald-600 dark:text-emerald-400">₹{p.amount.toFixed(2)}</td>
                           <td className="py-3.5 px-4 text-right">
-                            {cust?.phone && (
+                            <div className="flex justify-end gap-1.5">
+                              {cust?.phone && (
+                                <button
+                                  onClick={() => sendThanksWhatsApp(p.customerName, cust.phone, p.amount, p.date, p.method, cust.messageLanguage || 'english')}
+                                  className="text-emerald-600 hover:text-emerald-700 dark:text-emerald-450 dark:hover:text-emerald-350 p-1 hover:bg-slate-50 dark:hover:bg-slate-800/60 rounded-md transition-colors"
+                                  title="Send Thanks via WhatsApp"
+                                >
+                                  <MessageSquare className="w-3.5 h-3.5" />
+                                </button>
+                              )}
                               <button
-                                onClick={() => sendThanksWhatsApp(p.customerName, cust.phone, p.amount, p.date, p.method, cust.messageLanguage || 'english')}
-                                className="text-emerald-600 hover:text-emerald-700 dark:text-emerald-450 dark:hover:text-emerald-350 p-1 hover:bg-slate-50 dark:hover:bg-slate-800/60 rounded-md transition-colors"
-                                title="Send Thanks via WhatsApp"
+                                onClick={async () => {
+                                  if (confirm(`Are you sure you want to delete this payment of ₹${p.amount.toFixed(2)} for ${p.customerName}?`)) {
+                                    try {
+                                      await deletePayment(p.id);
+                                      toast.success('✓ Payment deleted successfully.');
+                                    } catch (err: any) {
+                                      toast.error(err.message || 'Failed to delete payment.');
+                                    }
+                                  }
+                                }}
+                                className="text-rose-600 hover:text-rose-700 dark:text-rose-455 dark:hover:text-rose-355 p-1 hover:bg-slate-50 dark:hover:bg-slate-800/60 rounded-md transition-colors"
+                                title="Delete Payment"
                               >
-                                <MessageSquare className="w-3.5 h-3.5" />
+                                <Trash2 className="w-3.5 h-3.5" />
                               </button>
-                            )}
+                            </div>
                           </td>
                         </tr>
                       );

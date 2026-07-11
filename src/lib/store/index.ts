@@ -83,6 +83,8 @@ interface AppStore {
   addExpense: (ex: Omit<Expense, 'id'>) => Promise<void>;
   deleteCustomer: (id: string) => Promise<void>;
   deleteMilkEntry: (id: string) => Promise<void>;
+  deletePayment: (id: string) => Promise<void>;
+  deleteExpense: (id: string) => Promise<void>;
   updateAllCustomerRates: (cowRate: number, buffaloRate: number, mixedRate: number) => Promise<void>;
   updateCustomer: (id: string, updates: Partial<Omit<Customer, 'id' | 'balance'>>) => Promise<void>;
   deleteUserAccount: () => Promise<void>;
@@ -621,6 +623,45 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
     // 3. Automatically reload state & recalculate everything dynamically
     await get().fetchData();
+  },
+
+  deletePayment: async (id) => {
+    const supabase = createClient();
+    const payment = get().payments.find(p => p.id === id);
+    if (!payment) return;
+
+    const { error } = await supabase
+      .from('payments')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw new Error(error.message);
+
+    set((state) => ({
+      payments: state.payments.filter(p => p.id !== id),
+      customers: state.customers.map(cust => {
+        if (cust.id === payment.customerId) {
+          const raw = cust.balance + payment.amount;
+          const clean = Math.abs(raw) < 0.01 ? 0 : parseFloat(raw.toFixed(2));
+          return { ...cust, balance: clean };
+        }
+        return cust;
+      }),
+    }));
+  },
+
+  deleteExpense: async (id) => {
+    const supabase = createClient();
+    const { error } = await supabase
+      .from('expenses')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw new Error(error.message);
+
+    set((state) => ({
+      expenses: state.expenses.filter(ex => ex.id !== id),
+    }));
   },
 
   deleteUserAccount: async () => {

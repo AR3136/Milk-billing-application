@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { DashboardLayoutShell } from '@/components/layout';
 import { Card, Badge, Button, Input } from '@/components/ui';
-import { Wallet } from 'lucide-react';
+import { Wallet, Trash2 } from 'lucide-react';
 import { useAppStore } from '@/lib/store';
 import { toast } from 'sonner';
 
@@ -11,6 +11,7 @@ export default function ExpensesPage() {
   const expenses = useAppStore((state) => state.expenses);
   const customers = useAppStore((state) => state.customers);
   const addExpense = useAppStore((state) => state.addExpense);
+  const deleteExpense = useAppStore((state) => state.deleteExpense);
 
   const [category, setCategory] = useState('feed');
   const [selectedCustomerId, setSelectedCustomerId] = useState('');
@@ -134,6 +135,7 @@ export default function ExpensesPage() {
                     <th className="py-3 px-4">Category</th>
                     <th className="py-3 px-4">Description</th>
                     <th className="py-3 px-4 text-right">Amount</th>
+                    <th className="py-3 px-4 text-right w-16">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50 dark:divide-slate-800/50">
@@ -157,6 +159,24 @@ export default function ExpensesPage() {
                           )}
                         </td>
                         <td className="py-3.5 px-4 text-right font-bold text-rose-600 dark:text-rose-400">₹{ex.amount}</td>
+                        <td className="py-3.5 px-4 text-right">
+                          <button
+                            onClick={async () => {
+                              if (confirm(`Are you sure you want to delete the expense of ₹${ex.amount.toFixed(2)} (${ex.description})?`)) {
+                                try {
+                                  await deleteExpense(ex.id);
+                                  toast.success('✓ Expense deleted successfully.');
+                                } catch (err: any) {
+                                  toast.error(err.message || 'Failed to delete expense.');
+                                }
+                              }
+                            }}
+                            className="text-rose-600 hover:text-rose-700 dark:text-rose-455 dark:hover:text-rose-355 p-1 hover:bg-slate-50 dark:hover:bg-slate-800/60 rounded-md transition-colors"
+                            title="Delete Expense"
+                          >
+                            <Trash2 className="w-3.5 h-3.5 inline" />
+                          </button>
+                        </td>
                       </tr>
                     );
                   })}
