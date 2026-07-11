@@ -427,10 +427,10 @@ export const BillInvoiceView: React.FC<BillInvoiceViewProps> = ({ bill, onClose 
       {/* Footer trigger options bar */}
       <div className="flex justify-between items-center border-t border-slate-100 pt-6 flex-wrap gap-2 text-xs no-print">
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={handlePrint} className="gap-2">
+          <Button variant="outline" size="sm" onClick={handlePrint} className="gap-2 border-slate-300 dark:border-slate-700 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-750 dark:text-slate-250 font-bold">
             <Printer className="w-3.5 h-3.5" /> Print
           </Button>
-          <Button variant="outline" size="sm" onClick={handleCopyToClipboard} className="gap-2">
+          <Button variant="outline" size="sm" onClick={handleCopyToClipboard} className="gap-2 border-blue-200 dark:border-blue-900/50 bg-blue-50/50 hover:bg-blue-100 dark:bg-blue-950/20 text-blue-600 dark:text-blue-400 font-bold">
             <Clipboard className="w-3.5 h-3.5" /> Copy Text
           </Button>
         </div>
