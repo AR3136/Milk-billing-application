@@ -26,8 +26,8 @@ export default function SettingsPage() {
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
 
   // WhatsApp templates
-  const [whatsappGreeting, setWhatsappGreeting] = useState('Hello');
-  const [whatsappThankyou, setWhatsappThankyou] = useState('Please clear the dues. Thank you!');
+  const [whatsappGreeting, setWhatsappGreeting] = useState('Namaskar');
+  const [whatsappThankyou, setWhatsappThankyou] = useState('Sorry');
   const [whatsappNoMilk, setWhatsappNoMilk] = useState('You did not take milk today.');
 
   const [whatsappGreetingMr, setWhatsappGreetingMr] = useState('नमस्कार');
@@ -49,8 +49,8 @@ export default function SettingsPage() {
       setBuffaloRate(localStorage.getItem('rate_buffalo') || '60');
       setMixedRate(localStorage.getItem('rate_mixed') || '52');
       
-      setWhatsappGreeting(localStorage.getItem('whatsapp_greeting') || 'Hello');
-      setWhatsappThankyou(localStorage.getItem('whatsapp_thankyou') || 'Please clear the dues. Thank you!');
+      setWhatsappGreeting(localStorage.getItem('whatsapp_greeting') || 'Namaskar');
+      setWhatsappThankyou(localStorage.getItem('whatsapp_thankyou') || 'Sorry');
       setWhatsappNoMilk(localStorage.getItem('whatsapp_no_milk') || 'You did not take milk today.');
 
       setWhatsappGreetingMr(localStorage.getItem('whatsapp_greeting_mr') || 'नमस्कार');
