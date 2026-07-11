@@ -397,13 +397,13 @@ export default function MilkEntryPage() {
                         className="w-full px-3 py-2.5 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 dark:text-slate-100"
                       />
                     </div>
-                    <div className="flex flex-wrap gap-2 sm:flex-col shrink-0">
+                    <div className="grid grid-cols-3 gap-2 w-full sm:flex sm:flex-col sm:w-auto shrink-0">
                       <Button
                         type="button"
                         variant="outline"
                         onClick={handleAsYesterday}
                         disabled={isSaving || !customerId}
-                        className="flex-1 min-w-[75px] h-[38px] px-2 text-[11px] border-dashed justify-center"
+                        className="h-[38px] px-2 text-[11px] border border-blue-200 dark:border-blue-900/50 bg-blue-50/50 hover:bg-blue-100 dark:bg-blue-950/20 text-blue-600 dark:text-blue-400 font-bold justify-center"
                       >
                         <History className="w-3.5 h-3.5 mr-1" /> Copy
                       </Button>
@@ -412,7 +412,7 @@ export default function MilkEntryPage() {
                         variant="outline"
                         onClick={handleNoMilkWhatsApp}
                         disabled={isSaving || !customerId || !selectedCust?.phone}
-                        className="flex-1 min-w-[85px] h-[38px] px-2 text-[11px] border-dashed text-red-600 border-red-200 hover:text-red-700 hover:bg-red-50 dark:border-red-900/50 dark:text-red-400 dark:hover:bg-red-900/20 justify-center"
+                        className="h-[38px] px-2 text-[11px] border border-rose-200 dark:border-rose-900/50 bg-rose-50/50 hover:bg-rose-100 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400 font-bold justify-center"
                       >
                         <MessageSquare className="w-3.5 h-3.5 mr-1" /> No Milk
                       </Button>
@@ -421,7 +421,7 @@ export default function MilkEntryPage() {
                         variant="primary"
                         onClick={handlePaidClick}
                         disabled={isSaving || !customerId || !quantity}
-                        className="flex-1 min-w-[75px] h-[38px] px-2 text-[11px] bg-emerald-600 hover:bg-emerald-700 text-white dark:bg-emerald-700 dark:hover:bg-emerald-800 justify-center font-bold"
+                        className="h-[38px] px-2 text-[11px] bg-emerald-600 hover:bg-emerald-700 text-white dark:bg-emerald-700 dark:hover:bg-emerald-800 justify-center font-bold shadow-md shadow-emerald-100 dark:shadow-none"
                       >
                         <CheckCircle2 className="w-3.5 h-3.5 mr-1" /> Paid
                       </Button>
@@ -472,10 +472,10 @@ export default function MilkEntryPage() {
                   </div>
                 )}
 
-                <Button type="submit" variant="secondary" disabled={isSaving || !customerId} className="w-full gap-2">
-                  <ClipboardCheck className="w-4 h-4" />
-                  {isSaving ? 'Saving...' : 'Save Entry'}
-                </Button>
+                 <Button type="submit" variant="primary" disabled={isSaving || !customerId} className="w-full gap-2 py-3 rounded-2xl font-bold shadow-md shadow-blue-200 dark:shadow-none">
+                   <ClipboardCheck className="w-4 h-4" />
+                   {isSaving ? 'Saving...' : 'Save Entry'}
+                 </Button>
               </form>
             )}
           </Card>

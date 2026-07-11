@@ -1167,28 +1167,29 @@ export default function BulkHistoricalEntryPage() {
               </select>
             </div>
 
-            <Button
-              variant="outline"
-              onClick={applyDefaultsToAll}
-              disabled={!isMonthLoaded || isSaving}
-              className="text-xs py-2 px-4 rounded-xl font-bold border-blue-200 text-blue-600 hover:bg-blue-50 dark:border-blue-900 dark:text-blue-400 dark:hover:bg-blue-950/20"
-            >
-              Fill Selected Rows
-            </Button>
+            <div className="flex gap-2 w-full sm:w-auto sm:ml-auto">
+              <Button
+                variant="outline"
+                onClick={applyDefaultsToAll}
+                disabled={!isMonthLoaded || isSaving}
+                className="flex-1 sm:flex-initial text-xs py-2.5 px-4 rounded-xl font-bold border border-blue-250 dark:border-blue-900/50 bg-blue-50/50 hover:bg-blue-100 dark:bg-blue-950/20 text-blue-650 dark:text-blue-400"
+              >
+                Fill Selected Rows
+              </Button>
 
-            {/* Load month button — right-aligned */}
-            <Button
-              variant="primary"
-              onClick={loadMonth}
-              disabled={isLoading || !selectedCustId}
-              id="load-month-btn"
-              className="ml-auto text-xs py-2 px-4 rounded-xl gap-2 flex items-center"
-            >
-              {isLoading
-                ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Loading…</>
-                : <><Calendar className="w-3.5 h-3.5" /> {isMonthLoaded ? 'Reload' : `Load`} {MONTH_NAMES[month - 1]} {year}</>
-              }
-            </Button>
+              <Button
+                variant="primary"
+                onClick={loadMonth}
+                disabled={isLoading || !selectedCustId}
+                id="load-month-btn"
+                className="flex-1 sm:flex-initial text-xs py-2.5 px-4 rounded-xl gap-2 flex items-center justify-center font-bold"
+              >
+                {isLoading
+                  ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Loading…</>
+                  : <><Calendar className="w-3.5 h-3.5" /> {isMonthLoaded ? 'Reload' : `Load`} {MONTH_NAMES[month - 1]} {year}</>
+                }
+              </Button>
+            </div>
           </div>
         </div>
 
